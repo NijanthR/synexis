@@ -1,0 +1,32 @@
+export const predictions = [
+  {
+    id: 1,
+    task: 'Leaf Classification',
+    model: 'Leaf ClassifyNet',
+    modelSlug: 'leaf-classifynet',
+    input: 'leaf_0234.jpg',
+    output: 'Powdery Mildew',
+    confidence: '96.4%',
+    time: '2 min ago',
+  },
+  {
+    id: 2,
+    task: 'House Price Prediction',
+    model: 'Price Predictor X',
+    modelSlug: 'price-predictor-x',
+    input: '3 bed, 2 bath, 1650 sqft',
+    output: '$412,000',
+    confidence: '93.1%',
+    time: '10 min ago',
+  },
+  {
+    id: 3,
+    task: 'Image Classification',
+    model: 'Synexis Vision Pro',
+    modelSlug: 'synexis-vision-pro',
+    input: 'product_8871.png',
+    output: 'Running Shoes',
+    confidence: '98.0%',
+    time: '25 min ago',
+  },
+];

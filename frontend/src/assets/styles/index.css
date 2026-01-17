@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --app-bg: #0f172a;
+  --app-text: #e2e8f0;
+  --sidebar-bg: #111827;
+  --sidebar-border: #1f2937;
+}
+
+.app-background {
+  background: var(--app-bg);
+  transition: background-color 200ms ease, background 200ms ease;
+}
+
+.app-text,
+.app-text .text-white,
+.app-text .text-gray-200,
+.app-text .text-gray-300,
+.app-text .text-gray-400,
+.app-text .text-gray-500,
+.app-text .text-slate-200,
+.app-text .text-slate-300,
+.app-text .text-slate-400 {
+  color: var(--app-text) !important;
+}
+
+.sidebar-background {
+  background: var(--sidebar-bg);
+}
+
+.sidebar-border {
+  border-color: var(--sidebar-border) !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

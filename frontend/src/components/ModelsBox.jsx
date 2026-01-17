@@ -1,4 +1,4 @@
-const ModelsBox = ({ title, description, accuracy, speed }) => {
+const ModelsBox = ({ title, description, accuracy, speed, onUse }) => {
   return (
     <div className="w-full h-full rounded-xl bg-gray-800 shadow-lg overflow-hidden border border-gray-700 flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-blue-500/50 hover:bg-gray-750">
       <div className="p-4 flex-shrink-0">
@@ -20,7 +20,10 @@ const ModelsBox = ({ title, description, accuracy, speed }) => {
           <span className="text-base font-semibold text-white">{speed}</span>
         </div>
         
-        <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
+        <button
+          onClick={onUse}
+          className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200"
+        >
           Use Model
         </button>
       </div>

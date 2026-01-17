@@ -11,7 +11,6 @@ const Sidebar = () => {
     { name: 'Models', icon: 'models', path: '/models' },
     { name: 'Datasets', icon: 'datasets', path: '/datasets' },
     { name: 'Predictions', icon: 'predictions', path: '/predictions' },
-    { name: 'API Access', icon: 'api', path: '/api-access' },
   ];
 
   const isActive = (path) => location.pathname === path;
@@ -70,10 +69,10 @@ const Sidebar = () => {
   };
 
   return (
-    <div className={`bg-gray-900 h-screen flex flex-col relative ${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 ease-in-out`}>
+    <div className={`sidebar-background h-screen flex flex-col relative ${isCollapsed ? 'w-20' : 'w-64'} transition-all duration-300 ease-in-out`}>
       
       {/* Logo and Toggle Section */}
-      <div className="p-4 border-b border-gray-700 min-h-[80px] flex items-center justify-between relative">
+      <div className="p-4 border-b sidebar-border min-h-[80px] flex items-center justify-between relative">
         <div className="flex items-center min-w-0">
           {isCollapsed ? (
             <div className="w-8 h-8 flex items-center justify-center flex-shrink-0">
@@ -144,7 +143,7 @@ const Sidebar = () => {
       </nav>
 
       {/* Bottom Section */}
-      <div className="p-4 border-t border-gray-700">
+      <div className="p-4 border-t sidebar-border">
         {/* Settings */}
         <div className="mb-3">
           <Link
