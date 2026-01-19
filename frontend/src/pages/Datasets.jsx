@@ -134,7 +134,7 @@ const Datasets = () => {
 
   return (
     <div className="min-h-[120vh] app-background">
-      <div className="px-6 py-10 max-w-6xl mx-auto">
+      <div className="w-full max-w-full px-6 py-10 mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white">Datasets</h1>
           <p className="text-gray-400 text-sm mt-1">
@@ -142,8 +142,8 @@ const Datasets = () => {
           </p>
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="component-surface border component-border rounded-xl overflow-hidden">
+          <div className="p-4 border-b component-border flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div>
               <p className="text-sm font-semibold text-white">Upload Excel dataset</p>
               <p className="text-xs text-gray-400">Supported formats: .xlsx, .xls</p>
@@ -153,7 +153,7 @@ const Datasets = () => {
                 {!isParsing && errorMessage && (
                   <span className="text-xs text-red-300">{errorMessage}</span>
                 )}
-              <label className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-sm text-gray-200 cursor-pointer hover:border-blue-500/60">
+              <label className="inline-flex items-center justify-center px-4 py-2 rounded-lg component-surface border component-border text-sm text-gray-200 cursor-pointer hover:border-blue-500/60">
                 Upload
                 <input
                   type="file"
@@ -182,7 +182,7 @@ const Datasets = () => {
                   <tr
                     key={dataset.id}
                     onClick={() => setSelectedDataset(dataset)}
-                    className="border-t border-gray-700 hover:bg-gray-900/40 cursor-pointer"
+                    className="border-t component-border hover:bg-gray-900/40 cursor-pointer"
                   >
                     <td className="px-4 py-3 text-gray-200">{dataset.name}</td>
                     <td className="px-4 py-3">{dataset.rows}</td>
@@ -214,7 +214,7 @@ const Datasets = () => {
         </div>
 
         {selectedDataset && (
-          <div className="mt-6 bg-gray-800 border border-gray-700 rounded-xl p-6">
+          <div className="mt-6 component-surface border component-border rounded-xl p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-white">Dataset details</h2>
               <button
@@ -255,7 +255,7 @@ const Datasets = () => {
             <div className="mt-6">
               <h3 className="text-sm font-semibold text-white">All records</h3>
               {selectedDataset.records?.length ? (
-                <div className="mt-3 overflow-auto rounded-lg border border-gray-700">
+                <div className="mt-3 overflow-auto rounded-lg border component-border">
                   <table className="min-w-full text-sm text-gray-300">
                     <thead className="bg-gray-900 text-gray-400">
                       <tr>
@@ -268,7 +268,7 @@ const Datasets = () => {
                     </thead>
                     <tbody>
                       {selectedDataset.records.map((record, index) => (
-                        <tr key={`${selectedDataset.id}-${index}`} className="border-t border-gray-700">
+                        <tr key={`${selectedDataset.id}-${index}`} className="border-t component-border">
                           {selectedDataset.fields?.map((field) => (
                             <td key={field} className="px-4 py-3">
                               {record[field] ?? '—'}

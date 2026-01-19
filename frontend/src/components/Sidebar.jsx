@@ -168,16 +168,24 @@ const Sidebar = () => {
         </div>
 
         {/* User Profile */}
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''} transition-all duration-200`}>
+        <Link
+          to="/profile"
+          className={`flex items-center rounded-lg transition-all duration-200 ${
+            isActive('/profile')
+              ? 'bg-gray-800 text-white'
+              : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+          } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
+          title={isCollapsed ? 'Profile' : ''}
+        >
           <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
           </div>
           
           {!isCollapsed && (
             <div className="ml-3 flex-1 min-w-0 transition-all duration-200">
-              <p className="text-sm font-medium text-gray-300 truncate transition-opacity duration-200">
+              <p className="text-sm font-medium truncate transition-opacity duration-200">
                 John Doe
               </p>
               <p className="text-xs text-gray-500 truncate transition-opacity duration-200">
@@ -185,7 +193,7 @@ const Sidebar = () => {
               </p>
             </div>
           )}
-        </div>
+        </Link>
       </div>
     </div>
   );

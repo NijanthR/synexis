@@ -37,7 +37,7 @@ const SearchBar = ({ className = '' }) => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search for models..."
-                        className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 hover:border-gray-600 focus:outline-none"
+                        className="w-full px-4 py-3 component-surface border component-border rounded-lg text-white placeholder-gray-400 hover:border-gray-600 focus:outline-none"
                     />
                 </div>
                 
@@ -49,7 +49,7 @@ const SearchBar = ({ className = '' }) => {
                         className={`px-6 py-3 rounded-lg text-sm font-medium min-w-[100px] ${
                             selectedCategory === 'All'
                                 ? 'bg-blue-600 text-white'
-                                : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                : 'component-surface text-gray-300 hover:bg-gray-700'
                         }`}
                     >
                         All
@@ -62,7 +62,7 @@ const SearchBar = ({ className = '' }) => {
                             className={`flex items-center justify-between w-full px-6 py-3 rounded-lg text-sm font-medium min-w-[140px] ${
                                 selectedCategory !== 'All'
                                     ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                                    : 'component-surface text-gray-300 hover:bg-gray-700'
                             }`}
                         >
                             <span className="flex-1 text-left">
@@ -80,7 +80,7 @@ const SearchBar = ({ className = '' }) => {
 
                         {/* Dropdown Menu with Hover Effects */}
                         {isDropdownOpen && (
-                            <div className="absolute top-full right-0 mt-1 min-w-[140px] bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-50 py-2">
+                            <div className="absolute top-full right-0 mt-1 min-w-[140px] component-surface border component-border rounded-lg shadow-lg z-50 py-2">
                                 {modelTypes.map((modelType) => (
                                     <button
                                         key={modelType}

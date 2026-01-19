@@ -1,6 +1,6 @@
 const ModelsBox = ({ title, description, accuracy, speed, onUse }) => {
   return (
-    <div className="w-full h-full rounded-xl bg-gray-800 shadow-lg overflow-hidden border border-gray-700 flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-blue-500/50 hover:bg-gray-750">
+    <div className="w-full h-full rounded-xl component-surface shadow-lg overflow-hidden border component-border flex flex-col transition-all duration-300 hover:shadow-2xl hover:border-blue-500/50 hover:bg-gray-750">
       <div className="p-4 flex-shrink-0">
         <h2 className="text-lg font-bold text-white">{title}</h2>
       </div>

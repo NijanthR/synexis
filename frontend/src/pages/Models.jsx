@@ -17,7 +17,7 @@ const Models = () => {
 
   return (
     <div className="min-h-[120vh] app-background">
-      <div className="px-6 py-10 max-w-6xl mx-auto">
+      <div className="w-full max-w-full px-6 py-10 mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-white">Models</h1>

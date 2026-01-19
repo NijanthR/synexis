@@ -5,7 +5,7 @@ const ChatSidebar = () => {
   const [messages, setMessages] = useState([
     {
       role: 'model',
-      content: 'Hello! I\'m your AI assistant. I can help you with machine learning models, datasets, predictions, and anything related to your Synexis ML projects. What would you like to know?',
+      content: 'Hello! I\'m your Synexis AI assistant.',
       timestamp: new Date()
     }
   ]);
@@ -21,49 +21,55 @@ const ChatSidebar = () => {
     scrollToBottom();
   }, [messages]);
 
-  // Simple direct API call to Gemini
+  // Call backend chat endpoint (backend uses same URL + API key)
   const getAIResponse = async (userMessage) => {
-    const API_KEY = "AIzaSyAEHcWlQkganQ1IBpRTA-hDbiqeof3F_7s";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-    
-    const requestBody = {
-      contents: [{
-        parts: [{
-          text: userMessage
-        }]
-      }],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1000,
-      }
-    };
+    let response;
 
     try {
-      const response = await fetch(url, {
+      response = await fetch('/api/chat/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({ message: userMessage }),
       });
+    } catch (error) {
+      throw new Error('Network error: Unable to reach the server.');
+    }
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (error) {
+      data = null;
+    }
+
+    if (!response.ok) {
+      const backendMessage = data?.error || `API error: ${response.status}`;
+
+      if (response.status === 502) {
+        throw new Error('AI service is temporarily unavailable. Please try again in a moment.');
       }
 
-      const data = await response.json();
-      return data.candidates[0].content.parts[0].text;
-    } catch (error) {
-      throw new Error(`Failed to get response: ${error.message}`);
+      throw new Error(backendMessage);
     }
+
+    const text = data?.text;
+    if (!text) {
+      throw new Error('Empty response from server.');
+    }
+
+    return text;
   };
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
+    const messageText = input.trim();
+
     const userMessage = { 
       role: 'user', 
-      content: input.trim(), 
+      content: messageText, 
       timestamp: new Date() 
     };
     
@@ -72,7 +78,7 @@ const ChatSidebar = () => {
     setIsLoading(true);
 
     try {
-      const aiResponse = await getAIResponse(input.trim());
+      const aiResponse = await getAIResponse(messageText);
       
       const assistantMessage = {
         role: 'model',
@@ -133,12 +139,12 @@ const ChatSidebar = () => {
       </button>
 
       {/* Chat Sidebar */}
-      <div className={`fixed top-0 right-0 h-full bg-gray-900 border-l border-gray-700 shadow-2xl transition-transform duration-300 z-40 flex flex-col ${
+      <div className={`fixed top-0 right-0 h-full component-surface border-l component-border shadow-2xl transition-transform duration-300 z-40 flex flex-col ${
         isOpen ? 'translate-x-0' : 'translate-x-full'
       } w-80`}>
         
         {/* Header */}
-        <div className="p-4 border-b border-gray-700 bg-gradient-to-r from-gray-800 to-gray-900 text-white flex-shrink-0">
+        <div className="p-4 border-b component-border bg-gradient-to-r from-gray-800 to-gray-900 text-white flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
@@ -174,7 +180,7 @@ const ChatSidebar = () => {
         </div>
 
         {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-800">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 component-surface">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -213,7 +219,7 @@ const ChatSidebar = () => {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 border-t border-gray-700 bg-gray-800 flex-shrink-0">
+        <div className="p-4 border-t component-border component-surface flex-shrink-0">
           <div className="flex space-x-2">
             <input
               type="text"

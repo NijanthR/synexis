@@ -7,6 +7,8 @@
   --app-text: #e2e8f0;
   --sidebar-bg: #111827;
   --sidebar-border: #1f2937;
+  --component-bg: #1f2937;
+  --component-border: #374151;
 }
 
 .app-background {
@@ -32,6 +34,14 @@
 
 .sidebar-border {
   border-color: var(--sidebar-border) !important;
+}
+
+.component-surface {
+  background: var(--component-bg);
+}
+
+.component-border {
+  border-color: var(--component-border) !important;
 }
 
 @keyframes fadeIn {

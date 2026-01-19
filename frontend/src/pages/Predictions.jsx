@@ -6,7 +6,7 @@ const Predictions = () => {
 
   return (
     <div className="min-h-[120vh] app-background">
-      <div className="px-6 py-10 max-w-6xl mx-auto">
+      <div className="w-full max-w-full px-6 py-10 mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-white">Predictions</h1>
           <p className="text-gray-400 text-sm mt-1">
@@ -18,7 +18,7 @@ const Predictions = () => {
           {predictions.map((item) => (
             <div
               key={item.id}
-              className="bg-gray-800 border border-gray-700 rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+              className="component-surface border component-border rounded-xl p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">

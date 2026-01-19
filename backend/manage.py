@@ -3,6 +3,7 @@ import os
 import sys
 
 if __name__ == '__main__':
+    os.environ.setdefault("GEMINI_API_KEY", "AIzaSyB-xq3HO_cAlwQkdN4cPcDCepkyTK6878E")
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
     try:
         from django.core.management import execute_from_command_line

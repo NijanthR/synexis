@@ -92,7 +92,7 @@ const ModelDetail = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-6 flex flex-col">
+          <div className="lg:col-span-2 component-surface border component-border rounded-xl p-6 flex flex-col">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-white">About model</h2>
               <div className="flex items-center gap-3">
@@ -117,19 +117,19 @@ const ModelDetail = () => {
                   setNotesValue(event.target.value);
                   setNotesSaved(false);
                 }}
-                className="mt-2 w-full min-h-[140px] rounded-lg bg-gray-900 border border-gray-700 text-sm text-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                className="mt-2 w-full min-h-[140px] rounded-lg bg-gray-900 border component-border text-sm text-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 placeholder="Describe how you plan to use this model..."
               />
             </div>
           </div>
 
-          <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 flex flex-col">
+          <div className="component-surface border component-border rounded-xl p-6 flex flex-col">
             <h2 className="text-lg font-semibold text-white">Run</h2>
             <p className="text-xs text-gray-400 mt-1">Provide sample input and run the model.</p>
             <div className="mt-4 flex-1">
               {model.category === 'image' ? (
                 <div className="space-y-4">
-                  <div className="min-h-[160px] rounded-lg bg-gray-900 border border-dashed border-gray-700 flex items-center justify-center">
+                  <div className="min-h-[160px] rounded-lg bg-gray-900 border border-dashed component-border flex items-center justify-center">
                     {imagePreview ? (
                       <img
                         src={imagePreview}
@@ -141,7 +141,7 @@ const ModelDetail = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-3">
-                    <label className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-900 border border-gray-700 text-sm text-gray-200 cursor-pointer hover:border-blue-500/60">
+                    <label className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-gray-900 border component-border text-sm text-gray-200 cursor-pointer hover:border-blue-500/60">
                       Upload
                       <input
                         type="file"
@@ -169,7 +169,7 @@ const ModelDetail = () => {
                   <textarea
                     value={inputValue}
                     onChange={(event) => setInputValue(event.target.value)}
-                    className="mt-2 w-full min-h-[140px] rounded-lg bg-gray-900 border border-gray-700 text-sm text-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    className="mt-2 w-full min-h-[140px] rounded-lg bg-gray-900 border component-border text-sm text-gray-200 p-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                     placeholder={model.inputPlaceholder}
                   />
                 </>
@@ -186,7 +186,7 @@ const ModelDetail = () => {
 
         <div
           ref={outputRef}
-          className="bg-gray-800 border border-gray-700 rounded-xl p-6 scroll-mt-6"
+          className="component-surface border component-border rounded-xl p-6 scroll-mt-6"
         >
           <h2 className="text-lg font-semibold text-white">Output</h2>
           {outputValue ? (
@@ -215,9 +215,9 @@ const ModelDetail = () => {
           )}
         </div>
 
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+        <div className="component-surface border component-border rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white">Dataset overview</h2>
-          <div className="mt-4 overflow-hidden rounded-lg border border-gray-700">
+          <div className="mt-4 overflow-hidden rounded-lg border component-border">
             <table className="w-full text-sm text-gray-300">
               <thead className="bg-gray-900 text-gray-400">
                 <tr>
@@ -229,7 +229,7 @@ const ModelDetail = () => {
               </thead>
               <tbody>
                 {model.datasets.map((dataset) => (
-                  <tr key={dataset.id} className="border-t border-gray-700">
+                  <tr key={dataset.id} className="border-t component-border">
                     <td className="px-4 py-3 text-gray-200">{dataset.name}</td>
                     <td className="px-4 py-3">{dataset.rows}</td>
                     <td className="px-4 py-3">{dataset.features}</td>

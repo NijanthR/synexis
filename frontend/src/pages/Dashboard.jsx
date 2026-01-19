@@ -120,7 +120,7 @@ const Dashboard = () => {
             {stats.map((stat) => (
               <div
                 key={stat.id}
-                className="bg-gray-800 border border-gray-700 rounded-xl p-4"
+                className="component-surface border component-border rounded-xl p-4"
               >
                 <p className="text-xs text-gray-400">{stat.label}</p>
                 <p className="text-2xl font-semibold text-white mt-2">{stat.value}</p>
@@ -132,7 +132,7 @@ const Dashboard = () => {
 
         <div className="w-full max-w-full px-6 mx-auto mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-6">
+            <div className="lg:col-span-2 component-surface border component-border rounded-xl p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white">Recent activity</h2>
                 <span className="text-xs text-gray-400">Last 24 hours</span>
@@ -141,7 +141,7 @@ const Dashboard = () => {
                 {activities.map((activity) => (
                   <div
                     key={activity.id}
-                    className="flex items-center justify-between border border-gray-700 rounded-lg p-4"
+                    className="flex items-center justify-between border component-border rounded-lg p-4"
                   >
                     <div>
                       <p className="text-sm font-semibold text-white">{activity.title}</p>
@@ -153,14 +153,14 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="bg-gray-800 border border-gray-700 rounded-xl p-6">
+            <div className="component-surface border component-border rounded-xl p-6">
               <h2 className="text-lg font-semibold text-white">Quick actions</h2>
               <div className="mt-4 space-y-3">
                 {quickActions.map((action) => (
                   <button
                     key={action.id}
                     type="button"
-                    className="w-full text-left border border-gray-700 rounded-lg p-4 hover:border-blue-500/50 transition"
+                    className="w-full text-left border component-border rounded-lg p-4 hover:border-blue-500/50 transition"
                   >
                     <p className="text-sm font-semibold text-white">{action.title}</p>
                     <p className="text-xs text-gray-400 mt-1">{action.description}</p>
