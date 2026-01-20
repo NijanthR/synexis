@@ -11,7 +11,15 @@ const ModelDetail = () => {
   const [notesSaved, setNotesSaved] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [isRunning, setIsRunning] = useState(false);
+  const [runError, setRunError] = useState('');
   const outputRef = useRef(null);
+
+  const savePrediction = (payload) => {
+    const existing = JSON.parse(localStorage.getItem('predictions:history') || '[]');
+    const next = [payload, ...existing].slice(0, 10);
+    localStorage.setItem('predictions:history', JSON.stringify(next));
+  };
 
   useEffect(() => {
     if (!model) {
@@ -41,17 +49,110 @@ const ModelDetail = () => {
     );
   }
 
-  const handleRun = () => {
-    const safeInput =
-      model.category === 'image'
-        ? imageFile?.name || model.inputPlaceholder
-        : inputValue?.trim() || model.inputPlaceholder;
-    setOutputValue({
-      input: safeInput,
-      output: model.sampleOutput,
-      confidence: model.category === 'tabular' ? '92.1%' : '97.4%',
-      latency: model.speed,
-    });
+  const handleRun = async () => {
+    setRunError('');
+
+    if (model.category === 'image' && model.slug === 'synexis-vision-pro') {
+      if (!imageFile) {
+        setRunError('Please upload a flower image first.');
+        return;
+      }
+
+      setIsRunning(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const response = await fetch('/api/flower/predict/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          setRunError(data?.error || 'Prediction failed.');
+          return;
+        }
+
+        const resultPayload = {
+          input: imageFile.name,
+          output: data.label,
+          confidence: `${(data.confidence * 100).toFixed(1)}%`,
+          latency: model.speed,
+        };
+        setOutputValue(resultPayload);
+        savePrediction({
+          id: `pred-${Date.now()}`,
+          task: 'Image Classification',
+          model: model.title,
+          modelSlug: model.slug,
+          input: imageFile.name,
+          output: resultPayload.output,
+          confidence: resultPayload.confidence,
+          timestamp: Date.now(),
+        });
+      } catch (err) {
+        setRunError('Network error. Please try again.');
+      } finally {
+        setIsRunning(false);
+      }
+    } else if (model.category === 'image' && model.slug === 'leaf-classifynet') {
+      if (!imageFile) {
+        setRunError('Please upload an animal image first.');
+        return;
+      }
+
+      setIsRunning(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', imageFile);
+
+        const response = await fetch('/api/animal/predict/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json().catch(() => null);
+        if (!response.ok) {
+          setRunError(data?.error || 'Prediction failed.');
+          return;
+        }
+
+        const resultPayload = {
+          input: imageFile.name,
+          output: data.label,
+          confidence: `${(data.confidence * 100).toFixed(1)}%`,
+          latency: model.speed,
+        };
+        setOutputValue(resultPayload);
+        savePrediction({
+          id: `pred-${Date.now()}`,
+          task: 'Animal Classification',
+          model: model.title,
+          modelSlug: model.slug,
+          input: imageFile.name,
+          output: resultPayload.output,
+          confidence: resultPayload.confidence,
+          timestamp: Date.now(),
+        });
+      } catch (err) {
+        setRunError('Network error. Please try again.');
+      } finally {
+        setIsRunning(false);
+      }
+    } else {
+      const safeInput =
+        model.category === 'image'
+          ? imageFile?.name || model.inputPlaceholder
+          : inputValue?.trim() || model.inputPlaceholder;
+      setOutputValue({
+        input: safeInput,
+        output: model.sampleOutput,
+        confidence: model.category === 'tabular' ? '92.1%' : '97.4%',
+        latency: model.speed,
+      });
+    }
+
     setTimeout(() => {
       outputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
@@ -152,6 +253,7 @@ const ModelDetail = () => {
                           if (!file) {
                             return;
                           }
+                          setRunError('');
                           setImageFile(file);
                           const previewUrl = URL.createObjectURL(file);
                           setImagePreview(previewUrl);
@@ -177,10 +279,16 @@ const ModelDetail = () => {
             </div>
             <button
               onClick={handleRun}
-              className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition"
+              disabled={isRunning}
+              className="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-lg transition disabled:bg-gray-600"
             >
-              Run model
+              {isRunning ? 'Running...' : 'Run model'}
             </button>
+            {runError && (
+              <p className="text-xs text-red-300 mt-3" role="alert">
+                {runError}
+              </p>
+            )}
           </div>
         </div>
 

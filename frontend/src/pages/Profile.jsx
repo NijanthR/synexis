@@ -4,6 +4,11 @@ const Profile = () => {
   const navigate = useNavigate();
 
   const handleSignOut = () => {
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('isAuthenticated');
+    window.dispatchEvent(new Event('auth-changed'));
     navigate('/login');
   };
 

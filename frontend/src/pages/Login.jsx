@@ -31,6 +31,12 @@ const Login = () => {
         return;
       }
 
+      const data = await response.json().catch(() => null);
+      sessionStorage.setItem('isAuthenticated', 'true');
+      if (data?.token) {
+        sessionStorage.setItem('authToken', data.token);
+      }
+      window.dispatchEvent(new Event('auth-changed'));
       navigate('/dashboard');
     } catch (err) {
       setError('Network error. Please try again.');

@@ -72,7 +72,7 @@ const Dashboard = () => {
   ];
 
   const activities = [
-    { id: 'act-1', title: 'Leaf ClassifyNet', detail: 'New prediction run completed', time: '5 min ago' },
+    { id: 'act-1', title: 'Animal ClassifyNet', detail: 'New prediction run completed', time: '5 min ago' },
     { id: 'act-2', title: 'Price Predictor X', detail: 'Dataset refreshed: Metro Housing 2025', time: '1 hour ago' },
     { id: 'act-3', title: 'Synexis Vision Pro', detail: 'Model version 2.4 deployed', time: 'Yesterday' },
   ];
