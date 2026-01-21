@@ -1,122 +1,71 @@
 import { useEffect, useMemo, useState } from 'react';
 
-const STORAGE_BG = 'synexis:app-bg';
-const STORAGE_TEXT = 'synexis:app-text';
-const STORAGE_SIDEBAR_BG = 'synexis:sidebar-bg';
-const STORAGE_SIDEBAR_BORDER = 'synexis:sidebar-border';
-const STORAGE_COMPONENT_BG = 'synexis:component-bg';
-const STORAGE_COMPONENT_BORDER = 'synexis:component-border';
+const STORAGE_THEME = 'synexis:theme';
 
 const Settings = () => {
-  const backgroundColors = useMemo(
-    () => [
-      { name: 'Midnight', value: '#0f172a' },
-      { name: 'Slate', value: '#111827' },
-      { name: 'Indigo', value: '#1e1b4b' },
-      { name: 'Ocean', value: '#0f2a3f' },
-      { name: 'Emerald', value: '#064e3b' },
-      { name: 'Aubergine', value: '#2a0f2e' },
-      { name: 'Snow', value: '#ffffff' },
-    ],
+  const themes = useMemo(
+    () => ({
+      dark: {
+        label: 'Dark',
+        description: 'Deep slate with soft text contrast.',
+        appBg: '#0f172a',
+        appText: '#e2e8f0',
+        sidebarBg: '#111827',
+        sidebarBorder: '#1f2937',
+        componentBg: '#1f2937',
+        componentBorder: '#374151',
+      },
+      light: {
+        label: 'Light',
+        description: 'Clean white surface with dark text.',
+        appBg: '#f8fafc',
+        appText: '#0f172a',
+        sidebarBg: '#ffffff',
+        sidebarBorder: '#e2e8f0',
+        componentBg: '#ffffff',
+        componentBorder: '#e2e8f0',
+      },
+      night: {
+        label: 'Night',
+        description: 'Near-black canvas with crisp highlights.',
+        appBg: '#0b1120',
+        appText: '#f8fafc',
+        sidebarBg: '#0b1120',
+        sidebarBorder: '#1e293b',
+        componentBg: '#111827',
+        componentBorder: '#1f2937',
+      },
+    }),
     [],
   );
 
-  const textColors = useMemo(
-    () => [
-      { name: 'Frost', value: '#e2e8f0' },
-      { name: 'Pearl', value: '#f8fafc' },
-      { name: 'Sky', value: '#bfdbfe' },
-      { name: 'Mint', value: '#a7f3d0' },
-      { name: 'Rose', value: '#fecdd3' },
-      { name: 'Ink', value: '#111827' },
-    ],
-    [],
-  );
-
-  const sidebarColors = useMemo(
-    () => [
-      { name: 'Graphite', value: '#111827', border: '#1f2937' },
-      { name: 'Midnight', value: '#0b1120', border: '#1e293b' },
-      { name: 'Ink', value: '#0f172a', border: '#1e293b' },
-      { name: 'Plum', value: '#2b0f2e', border: '#3b153f' },
-      { name: 'Emerald', value: '#064e3b', border: '#0f766e' },
-      { name: 'Pearl', value: '#f8fafc', border: '#e2e8f0' },
-    ],
-    [],
-  );
-
-  const componentColors = useMemo(
-    () => [
-      { name: 'Charcoal', value: '#1f2937', border: '#374151' },
-      { name: 'Slate', value: '#111827', border: '#1f2937' },
-      { name: 'Indigo', value: '#1e1b4b', border: '#312e81' },
-      { name: 'Ocean', value: '#0f2a3f', border: '#1f3b57' },
-      { name: 'Emerald', value: '#064e3b', border: '#0f766e' },
-      { name: 'Pearl', value: '#f1f5f9', border: '#e2e8f0' },
-    ],
-    [],
-  );
-
-  const [selectedBackground, setSelectedBackground] = useState(
-    backgroundColors[0].value,
-  );
-  const [selectedText, setSelectedText] = useState(textColors[0].value);
-  const [selectedSidebar, setSelectedSidebar] = useState(sidebarColors[0].value);
-  const [selectedComponent, setSelectedComponent] = useState(
-    componentColors[0].value,
-  );
+  const [selectedTheme, setSelectedTheme] = useState('dark');
 
   useEffect(() => {
-    const savedBg = localStorage.getItem(STORAGE_BG) || backgroundColors[0].value;
-    const savedText = localStorage.getItem(STORAGE_TEXT) || textColors[0].value;
-    const savedSidebarBg =
-      localStorage.getItem(STORAGE_SIDEBAR_BG) || sidebarColors[0].value;
-    const savedSidebarBorder =
-      localStorage.getItem(STORAGE_SIDEBAR_BORDER) || sidebarColors[0].border;
-    const savedComponentBg =
-      localStorage.getItem(STORAGE_COMPONENT_BG) || componentColors[0].value;
-    const savedComponentBorder =
-      localStorage.getItem(STORAGE_COMPONENT_BORDER) || componentColors[0].border;
+    const savedTheme = localStorage.getItem(STORAGE_THEME) || 'dark';
+    const theme = themes[savedTheme] || themes.dark;
+    setSelectedTheme(savedTheme in themes ? savedTheme : 'dark');
 
-    setSelectedBackground(savedBg);
-    setSelectedText(savedText);
-    setSelectedSidebar(savedSidebarBg);
-    setSelectedComponent(savedComponentBg);
+    document.documentElement.style.setProperty('--app-bg', theme.appBg);
+    document.documentElement.style.setProperty('--app-text', theme.appText);
+    document.documentElement.style.setProperty('--sidebar-bg', theme.sidebarBg);
+    document.documentElement.style.setProperty('--sidebar-border', theme.sidebarBorder);
+    document.documentElement.style.setProperty('--component-bg', theme.componentBg);
+    document.documentElement.style.setProperty('--component-border', theme.componentBorder);
+  }, [themes]);
 
-    document.documentElement.style.setProperty('--app-bg', savedBg);
-    document.documentElement.style.setProperty('--app-text', savedText);
-    document.documentElement.style.setProperty('--sidebar-bg', savedSidebarBg);
-    document.documentElement.style.setProperty('--sidebar-border', savedSidebarBorder);
-    document.documentElement.style.setProperty('--component-bg', savedComponentBg);
-    document.documentElement.style.setProperty('--component-border', savedComponentBorder);
-  }, [backgroundColors, textColors, sidebarColors, componentColors]);
+  const applyTheme = (key) => {
+    const theme = themes[key];
+    if (!theme) return;
+    setSelectedTheme(key);
+    localStorage.setItem(STORAGE_THEME, key);
 
-  const applyBackground = (value) => {
-    setSelectedBackground(value);
-    localStorage.setItem(STORAGE_BG, value);
-    document.documentElement.style.setProperty('--app-bg', value);
-  };
-
-  const applyText = (value) => {
-    setSelectedText(value);
-    localStorage.setItem(STORAGE_TEXT, value);
-    document.documentElement.style.setProperty('--app-text', value);
-  };
-
-  const applySidebar = (value, border) => {
-    setSelectedSidebar(value);
-    localStorage.setItem(STORAGE_SIDEBAR_BG, value);
-    localStorage.setItem(STORAGE_SIDEBAR_BORDER, border);
-    document.documentElement.style.setProperty('--sidebar-bg', value);
-    document.documentElement.style.setProperty('--sidebar-border', border);
-  };
-
-  const applyComponent = (value, border) => {
-    setSelectedComponent(value);
-    localStorage.setItem(STORAGE_COMPONENT_BG, value);
-    localStorage.setItem(STORAGE_COMPONENT_BORDER, border);
-    document.documentElement.style.setProperty('--component-bg', value);
-    document.documentElement.style.setProperty('--component-border', border);
+    document.documentElement.style.setProperty('--app-bg', theme.appBg);
+    document.documentElement.style.setProperty('--app-text', theme.appText);
+    document.documentElement.style.setProperty('--sidebar-bg', theme.sidebarBg);
+    document.documentElement.style.setProperty('--sidebar-border', theme.sidebarBorder);
+    document.documentElement.style.setProperty('--component-bg', theme.componentBg);
+    document.documentElement.style.setProperty('--component-border', theme.componentBorder);
   };
 
   const Section = ({ title, description, children }) => (
@@ -141,132 +90,50 @@ const Settings = () => {
 
         <div className="component-surface border component-border rounded-xl p-4 space-y-4">
           <Section
-            title="App background"
-            description="Pick a background color for the application."
+            title="Theme"
+            description="Choose one of three consistent themes for the entire app."
           >
-            <div className="grid grid-cols-7 sm:grid-cols-10 lg:grid-cols-14 gap-2">
-              {backgroundColors.map((color) => {
-                const isActive = selectedBackground === color.value;
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {Object.entries(themes).map(([key, theme]) => {
+                const isActive = selectedTheme === key;
                 return (
                   <button
-                    key={color.value}
+                    key={key}
                     type="button"
-                    onClick={() => applyBackground(color.value)}
-                    title={color.name}
-                    aria-label={color.name}
-                    className={`rounded-md border transition-all p-1 ${
+                    onClick={() => applyTheme(key)}
+                    className={`rounded-xl border p-3 text-left transition-all ${
                       isActive
                         ? 'border-blue-400 ring-2 ring-blue-400/40'
                         : 'border-gray-700 hover:border-gray-500'
                     }`}
                   >
                     <div
-                      className="w-6 h-6 rounded border border-black/20"
-                      style={{ backgroundColor: color.value }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-
-          <Section
-            title="Component background"
-            description="Set card and panel backgrounds across the app."
-          >
-            <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-12 gap-2">
-              {componentColors.map((color) => {
-                const isActive = selectedComponent === color.value;
-                return (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => applyComponent(color.value, color.border)}
-                    title={color.name}
-                    aria-label={color.name}
-                    className={`rounded-md border transition-all p-1 ${
-                      isActive
-                        ? 'border-blue-400 ring-2 ring-blue-400/40'
-                        : 'border-gray-700 hover:border-gray-500'
-                    }`}
-                  >
-                    <div
-                      className="w-6 h-6 rounded border"
+                      className="h-16 rounded-lg border"
                       style={{
-                        backgroundColor: color.value,
-                        borderColor: color.border,
+                        backgroundColor: theme.appBg,
+                        borderColor: theme.componentBorder,
                       }}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-
-          <Section
-            title="Text color"
-            description="Choose the default text color across the app."
-          >
-            <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-12 gap-2">
-              {textColors.map((color) => {
-                const isActive = selectedText === color.value;
-                return (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => applyText(color.value)}
-                    title={color.name}
-                    aria-label={color.name}
-                    className={`rounded-md border transition-all p-1 ${
-                      isActive
-                        ? 'border-blue-400 ring-2 ring-blue-400/40'
-                        : 'border-gray-700 hover:border-gray-500'
-                    }`}
-                  >
-                    <div
-                      className="w-6 h-6 rounded border border-black/20 flex items-center justify-center"
-                      style={{ backgroundColor: '#0f172a' }}
                     >
-                      <span
-                        className="text-[10px] font-semibold"
-                        style={{ color: color.value }}
-                      >
-                        Aa
-                      </span>
+                      <div
+                        className="h-4 w-full"
+                        style={{
+                          backgroundColor: theme.sidebarBg,
+                          borderBottom: `1px solid ${theme.sidebarBorder}`,
+                        }}
+                      />
+                      <div
+                        className="m-3 h-8 rounded-md"
+                        style={{ backgroundColor: theme.componentBg }}
+                      />
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          </Section>
-
-          <Section
-            title="Sidebar color"
-            description="Update the sidebar background and divider color."
-          >
-            <div className="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-12 gap-2">
-              {sidebarColors.map((color) => {
-                const isActive = selectedSidebar === color.value;
-                return (
-                  <button
-                    key={color.value}
-                    type="button"
-                    onClick={() => applySidebar(color.value, color.border)}
-                    title={color.name}
-                    aria-label={color.name}
-                    className={`rounded-md border transition-all p-1 ${
-                      isActive
-                        ? 'border-blue-400 ring-2 ring-blue-400/40'
-                        : 'border-gray-700 hover:border-gray-500'
-                    }`}
-                  >
-                    <div
-                      className="w-6 h-6 rounded border"
-                      style={{
-                        backgroundColor: color.value,
-                        borderColor: color.border,
-                      }}
-                    />
+                    <div className="mt-2">
+                      <p className="text-sm font-semibold text-white">
+                        {theme.label}
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {theme.description}
+                      </p>
+                    </div>
                   </button>
                 );
               })}

@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const SearchBar = ({ className = '' }) => {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('All');
+const SearchBar = ({
+    className = '',
+    searchQuery = '',
+    onSearchChange = () => {},
+    selectedCategory = 'All',
+    onCategoryChange = () => {},
+    modelTypes = []
+}) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const modelTypes = ['Classification', 'Regression', 'Clustering', 'Deep Learning', 'Time Series', 'Anomaly Detection'];
-
     const handleModelSelect = (modelType) => {
-        setSelectedCategory(modelType);
+        onCategoryChange(modelType);
         setIsDropdownOpen(false);
     };
 
@@ -35,7 +38,7 @@ const SearchBar = ({ className = '' }) => {
                     <input
                         type="text"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search for models..."
                         className="w-full px-4 py-3 component-surface border component-border rounded-lg text-white placeholder-gray-400 hover:border-gray-600 focus:outline-none"
                     />
@@ -45,7 +48,7 @@ const SearchBar = ({ className = '' }) => {
                 <div className="flex gap-3" ref={dropdownRef}>
                     {/* All Button with Hover */}
                     <button
-                        onClick={() => setSelectedCategory('All')}
+                        onClick={() => onCategoryChange('All')}
                         className={`px-6 py-3 rounded-lg text-sm font-medium min-w-[100px] ${
                             selectedCategory === 'All'
                                 ? 'bg-blue-600 text-white'

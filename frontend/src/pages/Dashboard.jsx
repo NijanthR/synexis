@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import New from '../components/New';
 import SearchBar from '../components/SearchBar';
 import ModelsBox from '../components/ModelsBox';
 import Animation from '../components/Animation';
+import { models as catalogModels } from '../data/models';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedModelType, setSelectedModelType] = useState('All');
+  const [storedPredictions, setStoredPredictions] = useState([]);
+  const [uploadedDatasetsCount, setUploadedDatasetsCount] = useState(0);
   const modelsData = [
     {
       id: 1,
@@ -14,7 +19,8 @@ const Dashboard = () => {
       description: "A model that can classify images into predefined categories with high accuracy. Perfect for content moderation or product categorization.",
       accuracy: "98.2%",
       speed: "25ms",
-      category: "image"
+      category: "image",
+      modelType: "Classification"
     },
     {
       id: 2,
@@ -22,7 +28,8 @@ const Dashboard = () => {
       description: "Analyzes text sentiment and classifies it as positive, negative, or neutral. Great for social media monitoring.",
       accuracy: "95.7%",
       speed: "15ms",
-      category: "text"
+      category: "text",
+      modelType: "Classification"
     },
     {
       id: 3,
@@ -30,7 +37,8 @@ const Dashboard = () => {
       description: "Detects and locates multiple objects within images with bounding boxes. Ideal for autonomous vehicles and surveillance.",
       accuracy: "96.8%",
       speed: "45ms",
-      category: "image"
+      category: "image",
+      modelType: "Deep Learning"
     },
     {
       id: 4,
@@ -38,7 +46,8 @@ const Dashboard = () => {
       description: "Converts spoken language into text with high precision. Suitable for voice assistants and transcription services.",
       accuracy: "94.3%",
       speed: "30ms",
-      category: "audio"
+      category: "audio",
+      modelType: "Deep Learning"
     },
     {
       id: 5,
@@ -46,7 +55,8 @@ const Dashboard = () => {
       description: "Identifies fraudulent transactions and activities in real-time. Essential for financial security.",
       accuracy: "99.1%",
       speed: "10ms",
-      category: "tabular"
+      category: "tabular",
+      modelType: "Anomaly Detection"
     },
     {
       id: 6,
@@ -54,15 +64,111 @@ const Dashboard = () => {
       description: "Provides personalized recommendations based on user behavior and preferences. Perfect for e-commerce.",
       accuracy: "92.5%",
       speed: "20ms",
-      category: "tabular"
+      category: "tabular",
+      modelType: "Regression"
     }
   ];
 
+  const modelTypes = useMemo(() => {
+    const uniqueTypes = new Set(modelsData.map((model) => model.modelType));
+    return Array.from(uniqueTypes);
+  }, [modelsData]);
+
+  const filteredModels = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return modelsData.filter((model) => {
+      const matchesQuery =
+        query.length === 0 ||
+        model.title.toLowerCase().includes(query) ||
+        model.description.toLowerCase().includes(query);
+      const matchesType =
+        selectedModelType === 'All' || model.modelType === selectedModelType;
+      return matchesQuery && matchesType;
+    });
+  }, [modelsData, searchQuery, selectedModelType]);
+
+  useEffect(() => {
+    const loadPredictions = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('predictions:history') || '[]');
+        setStoredPredictions(Array.isArray(stored) ? stored : []);
+      } catch (error) {
+        setStoredPredictions([]);
+      }
+    };
+
+    const loadDatasets = () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('datasets:excel') || '[]');
+        setUploadedDatasetsCount(Array.isArray(stored) ? stored.length : 0);
+      } catch (error) {
+        setUploadedDatasetsCount(0);
+      }
+    };
+
+    loadPredictions();
+    loadDatasets();
+
+    const handleStorage = (event) => {
+      if (event.key === 'predictions:history') {
+        loadPredictions();
+      }
+      if (event.key === 'datasets:excel') {
+        loadDatasets();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const activeModelsCount = catalogModels.length;
+
+  const predictionsTodayCount = useMemo(() => {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const startTimestamp = startOfDay.getTime();
+    return storedPredictions.filter((prediction) =>
+      typeof prediction.timestamp === 'number' && prediction.timestamp >= startTimestamp
+    ).length;
+  }, [storedPredictions]);
+
+  const averageLatencyMs = useMemo(() => {
+    const latencies = catalogModels
+      .map((model) => Number.parseFloat(String(model.speed).replace('ms', '').trim()))
+      .filter((value) => Number.isFinite(value));
+    if (!latencies.length) {
+      return 0;
+    }
+    const total = latencies.reduce((sum, value) => sum + value, 0);
+    return total / latencies.length;
+  }, [catalogModels]);
+
   const stats = [
-    { id: 'stat-1', label: 'Active Models', value: '12', trend: '+2 this week' },
-    { id: 'stat-2', label: 'Predictions Today', value: '8,942', trend: '+6.1%' },
-    { id: 'stat-3', label: 'Avg Latency', value: '21ms', trend: '-3ms' },
-    { id: 'stat-4', label: 'Datasets', value: '34', trend: '5 updated' },
+    {
+      id: 'stat-1',
+      label: 'Active Models',
+      value: activeModelsCount.toString(),
+      trend: `${activeModelsCount} in catalog`,
+    },
+    {
+      id: 'stat-2',
+      label: 'Predictions Today',
+      value: predictionsTodayCount.toLocaleString(),
+      trend: 'From local runs',
+    },
+    {
+      id: 'stat-3',
+      label: 'Avg Latency',
+      value: averageLatencyMs ? `${Math.round(averageLatencyMs)}ms` : '—',
+      trend: `Avg across ${activeModelsCount} models`,
+    },
+    {
+      id: 'stat-4',
+      label: 'Datasets Uploaded',
+      value: uploadedDatasetsCount.toString(),
+      trend: 'Stored locally',
+    },
   ];
 
   const quickActions = [
@@ -86,13 +192,19 @@ const Dashboard = () => {
         </div>
         
         <div className="w-full max-w-full px-6 mx-auto">
-          <SearchBar />
+          <SearchBar
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedCategory={selectedModelType}
+            onCategoryChange={setSelectedModelType}
+            modelTypes={modelTypes}
+          />
         </div>
         
         {/* Models Container with gap near sidebar */}
         <div className="w-full max-w-full mx-auto">
           <div className="w-full flex space-x-8 overflow-x-auto pb-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pl-6">
-            {modelsData.map((model) => (
+            {filteredModels.map((model) => (
               <div key={model.id} className="flex-shrink-0 w-[380px] h-64">
                 <ModelsBox
                   title={model.title}
@@ -109,6 +221,14 @@ const Dashboard = () => {
                 />
               </div>
             ))}
+
+            {filteredModels.length === 0 && (
+              <div className="flex items-center justify-center h-64 w-full">
+                <div className="text-sm text-gray-400">
+                  No models match your search.
+                </div>
+              </div>
+            )}
             
             {/* Extra space at the end for proper scrolling */}
             <div className="flex-shrink-0 w-6"></div>

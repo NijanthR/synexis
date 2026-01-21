@@ -11,13 +11,21 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
 
-from .models import UserCredential
+from .models import UserCredential, ApiKey
 
 
 API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 GEMINI_URL = (
 	"https://generativelanguage.googleapis.com/v1beta/models/"
 	"gemini-2.5-flash:generateContent"
+)
+
+SYSTEM_PROMPT = (
+	"Your name is Gojo. Answer the user's question directly and exactly. "
+	"anwer to user if question is from any domain "
+	"make youser happy and satisfied  "
+	"give responses based on previous conversations"
+	"give responses shortly and clearly. if solution is long try to give in 10 bullet points shortly"
 )
 
 MODEL_DIR = Path(__file__).resolve().parent / "models"
@@ -118,6 +126,15 @@ def _fallback_response(message):
 		"I can help with Synexis ML models, datasets, predictions, and troubleshooting. "
 		"Tell me what you’re trying to do and I’ll guide you."
 	)
+
+
+def _get_api_key():
+	stored_key = (
+		ApiKey.objects.filter(provider__iexact="gemini", is_active=True)
+		.values_list("key", flat=True)
+		.first()
+	)
+	return (stored_key or "").strip() or API_KEY
 
 
 def _ensure_default_user():
@@ -297,36 +314,62 @@ def chat(request):
 	if request.method != "POST":
 		return JsonResponse({"error": "Method not allowed"}, status=405)
 
+	fallback_prompt = ""
 	try:
 		payload = json.loads(request.body.decode("utf-8") or "{}")
 		message = str(payload.get("message", "")).strip()
-		if not message:
+		messages = payload.get("messages", [])
+		client_cache = payload.get("client_cache") or {}
+		if not message and not isinstance(messages, list):
 			return JsonResponse({"error": "Message is required"}, status=400)
 
-		if not API_KEY:
-			return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=500)
+		fallback_prompt = message
+		if not fallback_prompt and isinstance(messages, list) and messages:
+			last_user = next(
+				(item for item in reversed(messages) if str(item.get("role", "")).lower() == "user"),
+				None,
+			)
+			fallback_prompt = str(last_user.get("content", "")).strip() if last_user else ""
+
+		api_key = _get_api_key()
+		if not api_key:
+			return JsonResponse({"error": "Missing GEMINI_API_KEY"}, status=503)
+
+		contents = []
+		if isinstance(messages, list) and messages:
+			for item in messages[-12:]:
+				role = "user" if str(item.get("role", "")).lower() == "user" else "model"
+				text = str(item.get("content", "")).strip()
+				if text:
+					contents.append({"role": role, "parts": [{"text": text}]})
+
+		if not contents and message:
+			contents = [{"role": "user", "parts": [{"text": message}]}]
+
+		if not contents:
+			return JsonResponse({"error": "Message is required"}, status=400)
+
+		cache_parts = []
+		if isinstance(client_cache, dict):
+			for key in ("local_math", "cached_match", "followup_suggestion", "last_user_message"):
+				value = client_cache.get(key)
+				if value:
+					cache_parts.append(f"{key}: {value}")
+
+		system_parts = [SYSTEM_PROMPT]
+		if cache_parts:
+			system_parts.append("Client cache hints:\n" + "\n".join(cache_parts))
 
 		request_body = {
-			"contents": [
-				{
-					"role": "user",
-					"parts": [
-						{
-							"text": (
-								"Answer in one short response. Be clear and only address what is asked.\n"
-								f"User: {message}"
-							),
-						}
-					]
-				}
-			],
+			"systemInstruction": {"parts": [{"text": text} for text in system_parts]},
+			"contents": contents,
 			"generationConfig": {
 				"temperature": 0.7,
 				"maxOutputTokens": 1000,
 			},
 		}
 
-		url = f"{GEMINI_URL}?key={API_KEY}"
+		url = f"{GEMINI_URL}?key={api_key}"
 		req = urllib.request.Request(
 			url,
 			data=json.dumps(request_body).encode("utf-8"),
@@ -345,31 +388,21 @@ def chat(request):
 		)
 
 		if not ai_text:
-			fallback_text = _fallback_response(message)
-			return JsonResponse({"text": fallback_text, "fallback": True})
+			return JsonResponse({"error": "Empty response from AI service"}, status=502)
 
 		return JsonResponse({"text": ai_text})
 
 	except urllib.error.HTTPError as error:
 		error_body = error.read().decode("utf-8") if error.fp else ""
-		fallback_text = _fallback_response(message)
 		return JsonResponse(
 			{
-				"text": fallback_text,
-				"fallback": True,
 				"error": f"Upstream API error: {error.code}",
 				"details": error_body,
 			},
+			status=502,
 		)
 	except Exception as error:
-		fallback_text = _fallback_response(message)
-		return JsonResponse(
-			{
-				"text": fallback_text,
-				"fallback": True,
-				"error": str(error),
-			},
-		)
+		return JsonResponse({"error": str(error)}, status=500)
 
 
 @csrf_exempt

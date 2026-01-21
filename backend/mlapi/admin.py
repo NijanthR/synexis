@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.hashers import make_password
 from django import forms
 
-from .models import UserCredential
+from .models import UserCredential, ApiKey
 
 
 class UserCredentialForm(forms.ModelForm):
@@ -11,6 +11,14 @@ class UserCredentialForm(forms.ModelForm):
 	class Meta:
 		model = UserCredential
 		fields = ("email", "password")
+
+
+class ApiKeyForm(forms.ModelForm):
+	key = forms.CharField(widget=forms.PasswordInput(render_value=True))
+
+	class Meta:
+		model = ApiKey
+		fields = ("provider", "key", "is_active")
 
 
 @admin.register(UserCredential)
@@ -26,3 +34,11 @@ class UserCredentialAdmin(admin.ModelAdmin):
 		if raw_password:
 			obj.password_hash = make_password(raw_password)
 		super().save_model(request, obj, form, change)
+
+
+@admin.register(ApiKey)
+class ApiKeyAdmin(admin.ModelAdmin):
+	form = ApiKeyForm
+	list_display = ("provider", "is_active", "updated_at")
+	search_fields = ("provider",)
+	list_filter = ("is_active",)
