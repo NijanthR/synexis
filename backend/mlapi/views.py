@@ -527,4 +527,10 @@ def predict_animal(request):
 			}
 		)
 	
+
+
+	def dumm(request):
+		return JsonResponse({"status": "ok"})
+	
+	
 	
