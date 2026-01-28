@@ -123,8 +123,8 @@ const Sidebar = () => {
               to={item.path}
               className={`flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${
                 isActive(item.path)
-                  ? 'bg-gray-800 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  ? 'component-surface border component-border app-text'
+                  : 'text-gray-400 hover:component-surface hover:border hover:component-border hover:app-text'
               } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
               title={isCollapsed ? item.name : ''}
             >
@@ -150,8 +150,8 @@ const Sidebar = () => {
             to="/settings"
             className={`flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${
               isActive('/settings')
-                ? 'bg-gray-800 text-white'
-                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                ? 'component-surface border component-border app-text'
+                : 'text-gray-400 hover:component-surface hover:border hover:component-border hover:app-text'
             } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
             title={isCollapsed ? 'Settings' : ''}
           >
@@ -172,12 +172,12 @@ const Sidebar = () => {
           to="/profile"
           className={`flex items-center rounded-lg transition-all duration-200 ${
             isActive('/profile')
-              ? 'bg-gray-800 text-white'
-              : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              ? 'component-surface border component-border app-text'
+              : 'text-gray-400 hover:component-surface hover:border hover:component-border hover:app-text'
           } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
           title={isCollapsed ? 'Profile' : ''}
         >
-          <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-8 h-8 component-surface border component-border rounded-full flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
