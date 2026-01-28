@@ -43,7 +43,7 @@ const New = () => {
 
     return (
         <div 
-            className={`group bg-[#242933] rounded-xl shadow-2xl mb-8 flex flex-col transition-all duration-400 ease-in-out border border-[#373e4a] hover:border-[#4a5466] hover:shadow-3xl overflow-hidden ${
+            className={`group component-surface rounded-xl shadow-2xl mb-8 flex flex-col transition-all duration-400 ease-in-out border component-border hover:border-blue-500/30 hover:shadow-3xl overflow-hidden ${
                 isExpanded ? 'max-h-[300px]' : 'max-h-[140px]'
             }`}
             style={{
@@ -67,10 +67,10 @@ const New = () => {
                     </div>
                     
                     <div className="pr-4 transition-colors duration-300">
-                        <h3 className="text-lg font-bold text-white mb-1 group-hover:text-blue-200 transition-colors duration-300">
+                        <h3 className="text-lg font-bold app-text mb-1 group-hover:text-blue-400 transition-colors duration-300">
                             New to our platform?
                         </h3>
-                        <p className="text-sm text-gray-400 max-w-lg group-hover:text-gray-300 transition-colors duration-300">
+                        <p className="text-sm text-gray-400 max-w-lg group-hover:text-gray-500 transition-colors duration-300">
                             Take a quick tour to learn how to select models and make your first prediction.
                         </p>
                     </div>
@@ -79,10 +79,10 @@ const New = () => {
                 <div className="flex space-x-3 w-full md:w-auto justify-end">
                     <button 
                         onClick={handleLaterClick}
-                        className="relative px-5 py-2 text-sm font-medium text-blue-400 bg-[#1e242d] rounded-lg 
-                                 hover:bg-[#2c343d] hover:text-blue-300 hover:shadow-lg
+                        className="relative px-5 py-2 text-sm font-medium text-blue-400 component-surface rounded-lg 
+                                 hover:bg-blue-500/10 hover:text-blue-500 hover:shadow-lg
                                  transition-all duration-300 ease-out transform hover:-translate-y-0.5
-                                 border border-[#2a3240] hover:border-[#3a4250]
+                                 border component-border hover:border-blue-500/30
                                  overflow-hidden group/button min-w-[110px]"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-blue-900/20 to-transparent 
@@ -118,7 +118,7 @@ const New = () => {
             </div>
 
             <div 
-                className={`border-t border-[#373e4a] bg-[#1e242d] overflow-hidden transition-all duration-400 ease-in-out ${
+                className={`border-t component-border component-surface overflow-hidden transition-all duration-400 ease-in-out ${
                     isExpanded ? 'max-h-[200px] opacity-100' : 'max-h-0 opacity-0'
                 }`}
                 style={{
@@ -127,13 +127,13 @@ const New = () => {
             >
                 <div className="p-4">
                     <div className="w-full">
-                        <h4 className="text-md font-semibold text-white mb-3 flex items-center">
+                        <h4 className="text-md font-semibold app-text mb-3 flex items-center">
                             <svg className="w-4 h-4 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                             Quick Start Guide
                         </h4>
-                        <p className="text-sm text-gray-300 leading-relaxed transition-opacity duration-300 text-left">
+                        <p className="text-sm text-gray-400 leading-relaxed transition-opacity duration-300 text-left">
                             {tourContent}
                         </p>
                     </div>

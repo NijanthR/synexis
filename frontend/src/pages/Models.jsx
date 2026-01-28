@@ -36,7 +36,7 @@ const Models = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredModels.map((model) => (
-            <div key={model.id} className="h-64">
+            <div key={model.id} className="h-[310px]">
               <ModelsBox
                 title={model.title}
                 description={model.description}

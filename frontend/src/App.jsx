@@ -9,11 +9,12 @@ import Predictions from './pages/Predictions'
 import Settings from './pages/Settings'
 import Profile from './pages/Profile'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
 import ChatSidebar from './components/ChatSidebar'
 
 function App() {
   const location = useLocation();
-  const isLogin = location.pathname === '/login';
+  const isLogin = location.pathname === '/login' || location.pathname === '/signup';
   const [isAuthenticated, setIsAuthenticated] = useState(() =>
     Boolean(
       sessionStorage.getItem('authToken') ||
@@ -107,6 +108,12 @@ function App() {
                 path="/login"
                 element={
                   isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+                }
+              />
+              <Route
+                path="/signup"
+                element={
+                  isAuthenticated ? <Navigate to="/dashboard" replace /> : <Signup />
                 }
               />
             </Routes>

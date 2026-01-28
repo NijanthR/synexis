@@ -418,6 +418,14 @@ const ChatSidebar = () => {
         </svg>
       </button>
 
+      {/* Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
+          onClick={toggleChat}
+        />
+      )}
+
       {/* Chat Sidebar */}
       <div className={`fixed top-0 right-0 h-full component-surface border-l component-border shadow-2xl transition-transform duration-300 z-40 flex flex-col ${
         isOpen ? 'translate-x-0' : 'translate-x-full'

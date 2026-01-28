@@ -40,7 +40,7 @@ const SearchBar = ({
                         value={searchQuery}
                         onChange={(e) => onSearchChange(e.target.value)}
                         placeholder="Search for models..."
-                        className="w-full px-4 py-3 component-surface border component-border rounded-lg text-white placeholder-gray-400 hover:border-gray-600 focus:outline-none"
+                        className="w-full px-4 py-3 component-surface border component-border rounded-lg app-text placeholder-gray-400 hover:border-blue-500/40 focus:outline-none transition-all duration-200"
                     />
                 </div>
                 
@@ -49,10 +49,10 @@ const SearchBar = ({
                     {/* All Button with Hover */}
                     <button
                         onClick={() => onCategoryChange('All')}
-                        className={`px-6 py-3 rounded-lg text-sm font-medium min-w-[100px] ${
+                        className={`px-6 py-3 rounded-lg text-sm font-medium min-w-[100px] transition-all duration-200 ${
                             selectedCategory === 'All'
-                                ? 'bg-blue-600 text-white'
-                                : 'component-surface text-gray-300 hover:bg-gray-700'
+                                ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105 hover:shadow-lg'
+                                : 'component-surface border component-border text-gray-400 hover:border-blue-500/30 hover:scale-105'
                         }`}
                     >
                         All
@@ -62,10 +62,10 @@ const SearchBar = ({
                     <div className="relative">
                         <button
                             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className={`flex items-center justify-between w-full px-6 py-3 rounded-lg text-sm font-medium min-w-[140px] ${
+                            className={`flex items-center justify-between w-full px-6 py-3 rounded-lg text-sm font-medium min-w-[140px] transition-all duration-200 ${
                                 selectedCategory !== 'All'
-                                    ? 'bg-blue-600 text-white'
-                                    : 'component-surface text-gray-300 hover:bg-gray-700'
+                                    ? 'bg-blue-600 text-white hover:bg-blue-500 hover:scale-105 hover:shadow-lg'
+                                    : 'component-surface border component-border text-gray-400 hover:border-blue-500/30 hover:scale-105'
                             }`}
                         >
                             <span className="flex-1 text-left">
@@ -88,10 +88,10 @@ const SearchBar = ({
                                     <button
                                         key={modelType}
                                         onClick={() => handleModelSelect(modelType)}
-                                        className={`w-full text-left px-6 py-2 text-sm hover:bg-gray-700 ${
+                                        className={`w-full text-left px-6 py-2 text-sm hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-150 hover:scale-[1.02] ${
                                             selectedCategory === modelType
                                                 ? 'bg-blue-600 text-white'
-                                                : 'text-gray-300'
+                                                : 'text-gray-400'
                                         }`}
                                     >
                                         {modelType}

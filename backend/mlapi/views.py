@@ -275,6 +275,38 @@ def _load_animal_model():
 
 
 @csrf_exempt
+def signup(request):
+	if request.method != "POST":
+		return JsonResponse({"error": "Method not allowed"}, status=405)
+
+	try:
+		payload = json.loads(request.body.decode("utf-8") or "{}")
+		email = str(payload.get("email", "")).strip().lower()
+		password = str(payload.get("password", ""))
+		
+		if not email or not password:
+			return JsonResponse({"error": "Email and password are required"}, status=400)
+		
+		if len(password) < 6:
+			return JsonResponse({"error": "Password must be at least 6 characters"}, status=400)
+		
+		# Check if user already exists
+		if UserCredential.objects.filter(email=email).exists():
+			return JsonResponse({"error": "Email already registered"}, status=400)
+		
+		# Create new user
+		UserCredential.objects.create(
+			email=email,
+			password_hash=make_password(password),
+		)
+		
+		return JsonResponse({"ok": True, "message": "Account created successfully"})
+		
+	except Exception as error:
+		return JsonResponse({"error": str(error)}, status=500)
+
+
+@csrf_exempt
 def login(request):
 	if request.method != "POST":
 		return JsonResponse({"error": "Method not allowed"}, status=405)
