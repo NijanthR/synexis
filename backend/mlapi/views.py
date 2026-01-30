@@ -10,8 +10,9 @@ from django.http import JsonResponse
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth.models import User
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 
-from .models import UserCredential, ApiKey
+from .models import UserCredential
 
 
 API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
@@ -27,6 +28,12 @@ SYSTEM_PROMPT = (
 	"give responses based on previous conversations"
 	"give responses shortly and clearly. if solution is long try to give in 10 bullet points shortly"
 )
+
+LANGUAGE_NAMES = {
+	'en': 'English',
+	'ta': 'Tamil',
+	'hi': 'Hindi',
+}
 
 MODEL_DIR = Path(__file__).resolve().parent / "models"
 MODEL_BASENAME = "flowers_mobilenet"
@@ -129,12 +136,8 @@ def _fallback_response(message):
 
 
 def _get_api_key():
-	stored_key = (
-		ApiKey.objects.filter(provider__iexact="gemini", is_active=True)
-		.values_list("key", flat=True)
-		.first()
-	)
-	return (stored_key or "").strip() or API_KEY
+	# Get API key from environment variables (via Django settings)
+	return getattr(settings, 'CHAT_API_KEY', '').strip() or API_KEY
 
 
 def _ensure_default_user():
@@ -342,6 +345,143 @@ def login(request):
 
 
 @csrf_exempt
+def google_auth(request):
+	"""Handle Google OAuth authentication"""
+	if request.method != "POST":
+		return JsonResponse({"error": "Method not allowed"}, status=405)
+
+	try:
+		payload = json.loads(request.body.decode("utf-8") or "{}")
+		
+		# Support both token (ID token) and code (authorization code)
+		token = payload.get("token", "").strip()
+		code = payload.get("code", "").strip()
+		
+		if not token and not code:
+			return JsonResponse({"error": "Google token or code is required"}, status=400)
+
+		# Get Google OAuth config from environment variables
+		client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '').strip()
+		client_secret = getattr(settings, 'GOOGLE_CLIENT_SECRET', '').strip()
+		
+		if not client_id or not client_secret:
+			return JsonResponse({"error": "Google OAuth not configured"}, status=503)
+
+		# Handle authorization code flow
+		if code:
+			# Exchange code for tokens
+			token_url = "https://oauth2.googleapis.com/token"
+			token_data = {
+				"code": code,
+				"client_id": client_id,
+				"client_secret": client_secret,
+				"redirect_uri": "postmessage",  # Required for popup flow
+				"grant_type": "authorization_code"
+			}
+			
+			token_data_encoded = urllib.parse.urlencode(token_data).encode('utf-8')
+			token_req = urllib.request.Request(token_url, data=token_data_encoded, method='POST')
+			
+			try:
+				with urllib.request.urlopen(token_req) as token_response:
+					token_result = json.loads(token_response.read().decode("utf-8"))
+					token = token_result.get("id_token")
+					if not token:
+						return JsonResponse({"error": "Failed to get ID token from authorization code"}, status=400)
+			except urllib.error.HTTPError as e:
+				error_body = e.read().decode('utf-8')
+				print(f"Token exchange error: {error_body}")
+				return JsonResponse({"error": "Failed to exchange authorization code"}, status=401)
+
+		# Verify token with Google
+		verification_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+		req = urllib.request.Request(verification_url)
+		
+		try:
+			with urllib.request.urlopen(req) as response:
+				user_info = json.loads(response.read().decode("utf-8"))
+		except urllib.error.HTTPError as e:
+			return JsonResponse({"error": "Invalid Google token"}, status=401)
+
+		# Verify the token's audience matches our client ID
+		if user_info.get("aud") != client_id:
+			return JsonResponse({"error": "Token audience mismatch"}, status=401)
+
+		# Extract user information
+		google_id = user_info.get("sub")
+		email = user_info.get("email", "").lower()
+		full_name = user_info.get("name", "")
+		given_name = user_info.get("given_name", "")
+		family_name = user_info.get("family_name", "")
+		profile_picture = user_info.get("picture", "")
+		locale = user_info.get("locale", "en")
+		email_verified = user_info.get("email_verified", False)
+
+		if not google_id or not email:
+			return JsonResponse({"error": "Invalid user information from Google"}, status=400)
+
+		if not email_verified:
+			return JsonResponse({"error": "Email not verified with Google"}, status=400)
+
+		# Check if user exists with this Google ID
+		user = UserCredential.objects.filter(google_id=google_id).first()
+		
+		if user:
+			# Update user info
+			user.full_name = full_name
+			user.profile_picture = profile_picture
+			user.save()
+		else:
+			# Check if email already exists with different provider
+			existing_user = UserCredential.objects.filter(email=email).first()
+			if existing_user and existing_user.auth_provider != 'google':
+				return JsonResponse({
+					"error": "Email already registered with password login. Please use password login."
+				}, status=400)
+			
+			# Create new user
+			user = UserCredential.objects.create(
+				email=email,
+				google_id=google_id,
+				auth_provider='google',
+				full_name=full_name,
+				profile_picture=profile_picture
+			)
+
+		return JsonResponse({
+			"ok": True,
+			"user": {
+				"email": user.email,
+				"name": user.full_name or email.split("@")[0],
+				"given_name": given_name,
+				"family_name": family_name,
+				"picture": user.profile_picture,
+				"locale": locale,
+				"auth_provider": user.auth_provider
+			}
+		})
+
+	except Exception as error:
+		return JsonResponse({"error": str(error)}, status=500)
+
+
+@csrf_exempt
+def get_google_client_id(request):
+	"""Get Google OAuth client ID for frontend"""
+	if request.method != "GET":
+		return JsonResponse({"error": "Method not allowed"}, status=405)
+
+	try:
+		client_id = getattr(settings, 'GOOGLE_CLIENT_ID', '').strip()
+		if not client_id:
+			return JsonResponse({"error": "Google OAuth not configured"}, status=503)
+
+		return JsonResponse({"client_id": client_id})
+	except Exception as error:
+		return JsonResponse({"error": str(error)}, status=500)
+
+
+@csrf_exempt
 def chat(request):
 	if request.method != "POST":
 		return JsonResponse({"error": "Method not allowed"}, status=405)
@@ -352,6 +492,8 @@ def chat(request):
 		message = str(payload.get("message", "")).strip()
 		messages = payload.get("messages", [])
 		client_cache = payload.get("client_cache") or {}
+		language = payload.get("language", "en")  # Get selected language
+		
 		if not message and not isinstance(messages, list):
 			return JsonResponse({"error": "Message is required"}, status=400)
 
@@ -388,7 +530,11 @@ def chat(request):
 				if value:
 					cache_parts.append(f"{key}: {value}")
 
-		system_parts = [SYSTEM_PROMPT]
+		# Build system instruction with language requirement
+		language_name = LANGUAGE_NAMES.get(language, 'English')
+		language_instruction = f"IMPORTANT: Always respond in {language_name} language."
+		
+		system_parts = [SYSTEM_PROMPT, language_instruction]
 		if cache_parts:
 			system_parts.append("Client cache hints:\n" + "\n".join(cache_parts))
 

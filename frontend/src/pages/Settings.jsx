@@ -325,13 +325,15 @@ const Settings = () => {
               />
               
               <div className="pt-3 border-t border-gray-800">
-                <label className="text-sm font-medium text-white mb-3 block">Language</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <label className="text-sm font-medium text-white mb-3 block">
+                  Chat Language
+                  <span className="text-xs text-gray-400 ml-2 font-normal">Gojo will respond in your selected language</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     { code: 'en', label: 'English', flag: '🇺🇸' },
-                    { code: 'es', label: 'Español', flag: '🇪🇸' },
-                    { code: 'fr', label: 'Français', flag: '🇫🇷' },
-                    { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+                    { code: 'ta', label: 'தமிழ்', flag: '🇮🇳' },
+                    { code: 'hi', label: 'हिन्दी', flag: '🇮🇳' },
                   ].map((lang) => (
                     <button
                       key={lang.code}
