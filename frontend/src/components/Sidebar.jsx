@@ -1,10 +1,38 @@
 import { Link, useLocation } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import spiderSvg from '../assets/spider.svg';
 
 const Sidebar = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [userName, setUserName] = useState('User');
+  const [userEmail, setUserEmail] = useState('user@example.com');
+  const [userPicture, setUserPicture] = useState('');
+
+  useEffect(() => {
+    // Load user data from sessionStorage
+    const name = sessionStorage.getItem('userName') || 'User';
+    const email = sessionStorage.getItem('userEmail') || 'user@example.com';
+    const picture = sessionStorage.getItem('userPicture') || '';
+    
+    setUserName(name);
+    setUserEmail(email);
+    setUserPicture(picture);
+
+    // Listen for auth changes
+    const handleAuthChange = () => {
+      const updatedName = sessionStorage.getItem('userName') || 'User';
+      const updatedEmail = sessionStorage.getItem('userEmail') || 'user@example.com';
+      const updatedPicture = sessionStorage.getItem('userPicture') || '';
+      
+      setUserName(updatedName);
+      setUserEmail(updatedEmail);
+      setUserPicture(updatedPicture);
+    };
+
+    window.addEventListener('auth-changed', handleAuthChange);
+    return () => window.removeEventListener('auth-changed', handleAuthChange);
+  }, []);
 
   const menuItems = [
     { name: 'Dashboard', icon: 'dashboard', path: '/dashboard' },
@@ -123,8 +151,8 @@ const Sidebar = () => {
               to={item.path}
               className={`flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${
                 isActive(item.path)
-                  ? 'component-surface border component-border app-text'
-                  : 'text-gray-400 hover:component-surface hover:border hover:component-border hover:app-text'
+                  ? 'component-surface app-text shadow-lg'
+                  : 'text-gray-400 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 hover:text-white hover:shadow-md'
               } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
               title={isCollapsed ? item.name : ''}
             >
@@ -150,8 +178,8 @@ const Sidebar = () => {
             to="/settings"
             className={`flex items-center text-sm font-medium rounded-lg transition-all duration-200 ${
               isActive('/settings')
-                ? 'component-surface border component-border app-text'
-                : 'text-gray-400 hover:component-surface hover:border hover:component-border hover:app-text'
+                ? 'component-surface app-text shadow-lg'
+                : 'text-gray-400 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 hover:text-white hover:shadow-md'
             } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
             title={isCollapsed ? 'Settings' : ''}
           >
@@ -172,24 +200,38 @@ const Sidebar = () => {
           to="/profile"
           className={`flex items-center rounded-lg transition-all duration-200 ${
             isActive('/profile')
-              ? 'component-surface border component-border app-text'
-              : 'text-gray-400 hover:component-surface hover:border hover:component-border hover:app-text'
+              ? 'component-surface app-text shadow-lg'
+              : 'text-gray-400 hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-cyan-500/10 hover:text-white hover:shadow-md'
           } ${isCollapsed ? 'px-3 py-3 justify-center' : 'px-4 py-3'}`}
           title={isCollapsed ? 'Profile' : ''}
         >
-          <div className="w-8 h-8 component-surface border component-border rounded-full flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+          <div className="w-8 h-8 component-surface border component-border rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {userPicture ? (
+              <img 
+                src={userPicture} 
+                alt={userName}
+                className="w-full h-full object-cover"
+                crossOrigin="anonymous"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>';
+                }}
+              />
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            )}
           </div>
           
           {!isCollapsed && (
             <div className="ml-3 flex-1 min-w-0 transition-all duration-200">
               <p className="text-sm font-medium truncate transition-opacity duration-200">
-                John Doe
+                {userName}
               </p>
               <p className="text-xs text-gray-500 truncate transition-opacity duration-200">
-                john.doe@example.com
+                {userEmail}
               </p>
             </div>
           )}

@@ -282,6 +282,9 @@ const ChatSidebar = () => {
   // Call backend chat endpoint (backend uses same URL + API key)
   const getAIResponse = async (userMessage, conversation, clientCache) => {
     let response;
+    
+    // Get selected language from localStorage
+    const selectedLanguage = localStorage.getItem('synexis:language') || 'en';
 
     try {
       response = await fetch('/api/chat/', {
@@ -296,6 +299,7 @@ const ChatSidebar = () => {
             content: item.content,
           })),
           client_cache: clientCache || null,
+          language: selectedLanguage,
         }),
       });
     } catch (error) {
