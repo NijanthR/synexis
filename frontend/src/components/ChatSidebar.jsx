@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 
 const ChatSidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(320); // Default width in pixels
+  const [isResizing, setIsResizing] = useState(false);
   const [messages, setMessages] = useState(() => {
     try {
       const stored = sessionStorage.getItem('synexis.chat.messages');
@@ -30,6 +32,42 @@ const ChatSidebar = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const lastMathResultRef = useRef(null);
+  const sidebarRef = useRef(null);
+
+  // Handle mouse resize
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+      
+      const newWidth = window.innerWidth - e.clientX;
+      // Constrain width between 280px and 600px
+      const constrainedWidth = Math.max(280, Math.min(600, newWidth));
+      setSidebarWidth(constrainedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    if (isResizing) {
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const handleResizeStart = (e) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
 
   const formatMathResult = (value) => {
     if (!Number.isFinite(value)) return null;
@@ -407,10 +445,8 @@ const ChatSidebar = () => {
       {/* Toggle Button */}
       <button
         onClick={toggleChat}
-        style={{ color: 'var(--app-text)' }}
-        className={`fixed top-4 right-4 z-50 w-6 h-6 hover:opacity-80 transition-all duration-300 flex items-center justify-center ${
-          isOpen ? 'right-80' : ''
-        }`}
+        style={{ color: 'var(--app-text)', right: isOpen ? `${sidebarWidth}px` : '1rem' }}
+        className={`fixed top-4 z-50 w-6 h-6 hover:opacity-80 transition-all duration-300 flex items-center justify-center`}
       >
         <svg 
           className={`w-5 h-5 transition-transform duration-300 ${isOpen ? 'rotate-0' : 'rotate-180'}`} 
@@ -431,9 +467,21 @@ const ChatSidebar = () => {
       )}
 
       {/* Chat Sidebar */}
-      <div className={`fixed top-0 right-0 h-full component-surface border-l component-border shadow-2xl transition-transform duration-300 z-40 flex flex-col ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      } w-80`}>
+      <div 
+        ref={sidebarRef}
+        style={{ width: `${sidebarWidth}px` }}
+        className={`fixed top-0 right-0 h-full component-surface border-l component-border shadow-2xl transition-transform duration-300 z-40 flex flex-col ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {/* Resize Handle */}
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute left-0 top-0 w-1 h-full cursor-col-resize hover:bg-blue-500 transition-colors z-50 group"
+          title="Drag to resize"
+        >
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-20 bg-gray-400 group-hover:bg-blue-500 rounded-full transition-colors"></div>
+        </div>
         
         {/* Header */}
         <div className="p-4 border-b component-border component-surface flex-shrink-0">

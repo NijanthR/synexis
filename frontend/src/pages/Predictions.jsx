@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { predictions } from '../data/predictions';
 
 const Predictions = () => {
   const navigate = useNavigate();
@@ -9,7 +8,7 @@ const Predictions = () => {
   
   const latestPredictions = useMemo(() => {
     const stored = JSON.parse(localStorage.getItem('predictions:history') || '[]');
-    const combined = [...stored, ...predictions];
+    const combined = [...stored];
     
     // Filter by task
     let filtered = filterTask === 'all' 

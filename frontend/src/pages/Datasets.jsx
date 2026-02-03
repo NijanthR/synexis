@@ -6,82 +6,35 @@ const Datasets = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [isParsing, setIsParsing] = useState(false);
-  const [filterOwner, setFilterOwner] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const excelDatasets = [
-    {
-      id: 'xls-001',
-      name: 'Retail Sales Q4 2025.xlsx',
-      rows: '84,120',
-      columns: '18',
-      size: '12.4 MB',
-      updated: '2026-01-05',
-      owner: 'Analytics Team',
-      fields: ['Date', 'Region', 'Category', 'Revenue'],
-      records: [
-        { Date: '2025-12-03', Region: 'West', Category: 'Electronics', Revenue: 48210 },
-        { Date: '2025-12-03', Region: 'East', Category: 'Home', Revenue: 32540 },
-      ],
-    },
-    {
-      id: 'xls-002',
-      name: 'Customer Support Tickets.xlsx',
-      rows: '46,532',
-      columns: '12',
-      size: '6.1 MB',
-      updated: '2025-12-22',
-      owner: 'Ops',
-      fields: ['Ticket ID', 'Priority', 'Status', 'Resolution Time'],
-      records: [
-        { 'Ticket ID': 'SUP-8831', Priority: 'High', Status: 'Resolved', 'Resolution Time': '4h' },
-        { 'Ticket ID': 'SUP-8832', Priority: 'Medium', Status: 'In progress', 'Resolution Time': '—' },
-      ],
-    },
-    {
-      id: 'xls-003',
-      name: 'Housing Features San Francisco.xlsx',
-      rows: '120,004',
-      columns: '15',
-      size: '18.9 MB',
-      updated: '2025-12-29',
-      owner: 'Data Science',
-      fields: ['Bedrooms', 'Bathrooms', 'Sqft', 'Price'],
-      records: [
-        { Bedrooms: 3, Bathrooms: 2, Sqft: 1650, Price: 412000 },
-        { Bedrooms: 2, Bathrooms: 1, Sqft: 980, Price: 295000 },
-      ],
-    },
-    {
-      id: 'xls-004',
-      name: 'Inventory Snapshot.xlsx',
-      rows: '27,880',
-      columns: '10',
-      size: '3.2 MB',
-      updated: '2026-01-11',
-      owner: 'Supply Chain',
-      fields: ['SKU', 'Warehouse', 'On Hand', 'Reorder Point'],
-      records: [
-        { SKU: 'INV-1029', Warehouse: 'W1', 'On Hand': 320, 'Reorder Point': 120 },
-        { SKU: 'INV-1031', Warehouse: 'W2', 'On Hand': 88, 'Reorder Point': 150 },
-      ],
-    },
-  ];
-
   useEffect(() => {
-    const stored = localStorage.getItem('datasets:excel');
-    if (stored) {
-      try {
-        setUserDatasets(JSON.parse(stored));
-      } catch (error) {
-        setUserDatasets([]);
-      }
-    }
+    // Load datasets from backend
+    loadDatasetsFromBackend();
   }, []);
 
-  const persistDatasets = (nextDatasets) => {
-    setUserDatasets(nextDatasets);
-    localStorage.setItem('datasets:excel', JSON.stringify(nextDatasets));
+  const loadDatasetsFromBackend = async () => {
+    try {
+      const userEmail = localStorage.getItem('userEmail') || 'anonymous';
+      const response = await fetch(`/api/datasets/?user_email=${encodeURIComponent(userEmail)}`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedDatasets = data.datasets.map(ds => ({
+          id: ds.id,
+          name: ds.name,
+          rows: ds.rows.toLocaleString(),
+          columns: ds.columns.toString(),
+          size: ds.size,
+          updated: ds.uploaded_at.slice(0, 10),
+          owner: 'You',
+          fields: ds.fields,
+          records: ds.records, // Show all records
+        }));
+        setUserDatasets(formattedDatasets);
+      }
+    } catch (error) {
+      console.error('Failed to load datasets:', error);
+    }
   };
 
   const handleUpload = async (event) => {
@@ -96,52 +49,76 @@ const Datasets = () => {
     }
     setErrorMessage('');
     setIsParsing(true);
+    
     try {
-      const buffer = await file.arrayBuffer();
-      const workbook = XLSX.read(buffer, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const records = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      const fields = records.length ? Object.keys(records[0]) : [];
-      const now = new Date();
-      const next = [
-        {
-          id: `usr-${now.getTime()}`,
-          name: file.name,
-          rows: records.length.toLocaleString(),
-          columns: fields.length.toString(),
-          size: `${(file.size / (1024 * 1024)).toFixed(2)} MB`,
-          updated: now.toISOString().slice(0, 10),
-          owner: 'You',
-          fields,
-          records,
-        },
-        ...userDatasets,
-      ];
-      persistDatasets(next);
+      // Upload to backend
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('user_email', localStorage.getItem('userEmail') || 'anonymous');
+      
+      const response = await fetch('/api/datasets/upload/', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+      
+      const dataset = await response.json();
+      
+      // Add to local state
+      const formattedDataset = {
+        id: dataset.id,
+        name: dataset.name,
+        rows: dataset.rows.toLocaleString(),
+        columns: dataset.columns.toString(),
+        size: dataset.size,
+        updated: dataset.uploaded_at.slice(0, 10),
+        owner: 'You',
+        fields: dataset.fields,
+        records: dataset.records, // Show all records
+      };
+      
+      setUserDatasets([formattedDataset, ...userDatasets]);
+      
     } catch (error) {
-      setErrorMessage('Unable to parse the Excel file.');
+      setErrorMessage(error.message || 'Unable to upload the Excel file.');
     } finally {
       setIsParsing(false);
     }
     event.target.value = '';
   };
 
-  const handleDelete = (datasetId) => {
-    const next = userDatasets.filter((dataset) => dataset.id !== datasetId);
-    persistDatasets(next);
+  const handleDelete = async (datasetId) => {
+    if (!window.confirm('Are you sure you want to delete this dataset?')) {
+      return;
+    }
+    
+    try {
+      const userEmail = localStorage.getItem('userEmail') || 'anonymous';
+      const response = await fetch(`/api/datasets/${datasetId}/?user_email=${encodeURIComponent(userEmail)}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Delete failed');
+      }
+      
+      // Remove from local state
+      const next = userDatasets.filter((dataset) => dataset.id !== datasetId);
+      setUserDatasets(next);
+      
+    } catch (error) {
+      setErrorMessage(error.message || 'Unable to delete the dataset.');
+    }
   };
 
-  const allDatasets = [...userDatasets, ...excelDatasets];
-  
   // Filter and search datasets
   const filteredDatasets = useMemo(() => {
-    let filtered = allDatasets;
-    
-    // Filter by owner
-    if (filterOwner !== 'all') {
-      filtered = filtered.filter(d => d.owner === filterOwner);
-    }
+    let filtered = userDatasets;
     
     // Search by name
     if (searchQuery.trim()) {
@@ -150,32 +127,26 @@ const Datasets = () => {
     }
     
     return filtered;
-  }, [allDatasets, filterOwner, searchQuery]);
+  }, [userDatasets, searchQuery]);
   
   // Calculate stats
   const stats = useMemo(() => {
-    const totalRows = allDatasets.reduce((sum, d) => {
+    const totalRows = userDatasets.reduce((sum, d) => {
       return sum + parseInt(d.rows.replace(/,/g, ''));
     }, 0);
     
-    const totalSize = allDatasets.reduce((sum, d) => {
+    const totalSize = userDatasets.reduce((sum, d) => {
       const size = parseFloat(d.size);
       return sum + size;
     }, 0);
     
-    const userDatasetsCount = allDatasets.filter(d => d.owner === 'You').length;
-    
     return {
-      total: allDatasets.length,
+      total: userDatasets.length,
       totalRows: totalRows.toLocaleString(),
       totalSize: totalSize.toFixed(1) + ' MB',
-      userDatasets: userDatasetsCount
+      userDatasets: userDatasets.length
     };
-  }, [allDatasets]);
-  
-  const uniqueOwners = useMemo(() => {
-    return [...new Set(allDatasets.map(d => d.owner))];
-  }, [allDatasets]);
+  }, [userDatasets]);
 
   return (
     <div className="min-h-[120vh] app-background">
@@ -289,27 +260,10 @@ const Datasets = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search datasets..."
+                  placeholder="Search your datasets..."
                   className="w-full pl-10 pr-4 py-2.5 component-surface border component-border rounded-lg app-text placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-              </svg>
-              <span className="text-sm font-medium text-gray-400 whitespace-nowrap">Filter:</span>
-              <select
-                value={filterOwner}
-                onChange={(e) => setFilterOwner(e.target.value)}
-                className="px-3 py-2 text-sm font-medium rounded-lg component-surface app-text border component-border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              >
-                <option value="all">All Owners</option>
-                {uniqueOwners.map(owner => (
-                  <option key={owner} value={owner}>{owner}</option>
-                ))}
-              </select>
             </div>
           </div>
         </div>
@@ -331,7 +285,6 @@ const Datasets = () => {
                   <th className="text-left px-4 py-3 font-medium">Rows</th>
                   <th className="text-left px-4 py-3 font-medium">Columns</th>
                   <th className="text-left px-4 py-3 font-medium">Size</th>
-                  <th className="text-left px-4 py-3 font-medium">Owner</th>
                   <th className="text-left px-4 py-3 font-medium">Updated</th>
                   <th className="text-right px-4 py-3 font-medium">Actions</th>
                 </tr>
@@ -339,7 +292,7 @@ const Datasets = () => {
               <tbody>
                 {filteredDatasets.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-4 py-12 text-center">
+                    <td colSpan="6" className="px-4 py-12 text-center">
                       <div className="flex flex-col items-center justify-center">
                         <div className="w-16 h-16 component-surface border component-border rounded-full flex items-center justify-center mb-4">
                           <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -375,19 +328,9 @@ const Datasets = () => {
                         <span className="px-2 py-1 bg-purple-500/10 text-purple-400 rounded text-xs font-medium">{dataset.columns}</span>
                       </td>
                       <td className="px-4 py-3">{dataset.size}</td>
-                      <td className="px-4 py-3">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          dataset.owner === 'You' 
-                            ? 'bg-blue-500/10 text-blue-400' 
-                            : 'bg-gray-500/10 text-gray-400'
-                        }`}>
-                          {dataset.owner}
-                        </span>
-                      </td>
                       <td className="px-4 py-3 text-gray-400">{dataset.updated}</td>
                       <td className="px-4 py-3 text-right">
-                        {dataset.owner === 'You' ? (
-                          <button
+                        <button
                             type="button"
                             onClick={(event) => {
                               event.stopPropagation();
@@ -397,9 +340,6 @@ const Datasets = () => {
                           >
                             Delete
                           </button>
-                        ) : (
-                          <span className="text-xs text-gray-500">—</span>
-                        )}
                       </td>
                     </tr>
                   ))

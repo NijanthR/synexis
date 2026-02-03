@@ -120,6 +120,50 @@ const Settings = () => {
     setTimeout(() => setSuccessMessage(''), 3000);
   };
   
+  const handleResetAll = () => {
+    // Reset theme to dark
+    const defaultTheme = 'dark';
+    setSelectedTheme(defaultTheme);
+    localStorage.setItem(STORAGE_THEME, defaultTheme);
+    applyTheme(defaultTheme);
+    
+    // Reset notifications to defaults
+    const defaultNotifications = {
+      email: true,
+      push: false,
+      predictions: true,
+      modelUpdates: true,
+    };
+    setNotifications(defaultNotifications);
+    localStorage.setItem('synexis:notifications', JSON.stringify(defaultNotifications));
+    
+    // Reset auto-save to default (true)
+    setAutoSave(true);
+    localStorage.setItem('synexis:autoSave', 'true');
+    
+    // Reset language to English
+    setLanguage('en');
+    localStorage.setItem('synexis:language', 'en');
+    
+    // Clear cache (keep auth tokens)
+    const keysToKeep = ['authToken', 'isAuthenticated'];
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach(key => {
+      if (!keysToKeep.includes(key) && 
+          key !== STORAGE_THEME && 
+          key !== 'synexis:notifications' && 
+          key !== 'synexis:autoSave' && 
+          key !== 'synexis:language') {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Clear session storage except chat messages
+    sessionStorage.clear();
+    
+    showSuccessMessage('All settings reset to defaults successfully');
+  };
+  
   const handleClearCache = () => {
     // Clear specific cache items
     const keysToKeep = [STORAGE_THEME, 'synexis:notifications', 'synexis:autoSave', 'synexis:language', 'authToken', 'isAuthenticated'];
@@ -180,7 +224,10 @@ const Settings = () => {
                 Customize your workspace and manage preferences
               </p>
             </div>
-            <button className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 flex items-center gap-2">
+            <button 
+              onClick={handleResetAll}
+              className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all duration-200 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 flex items-center gap-2"
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>

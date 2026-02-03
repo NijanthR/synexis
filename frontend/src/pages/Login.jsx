@@ -14,6 +14,7 @@ const Login = () => {
   const [googleClientId, setGoogleClientId] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isGoogleInitialized, setIsGoogleInitialized] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   useEffect(() => {
     if (location.state?.message) {
@@ -34,7 +35,6 @@ const Login = () => {
       const response = await fetch('/api/google-client-id/');
       if (response.ok) {
         const data = await response.json();
-        console.log('Google Client ID loaded:', data.client_id?.substring(0, 20) + '...');
         setGoogleClientId(data.client_id);
       } else {
         console.error('Failed to fetch client ID, status:', response.status);
@@ -46,6 +46,10 @@ const Login = () => {
 
   const loadGoogleScript = () => {
     if (document.getElementById('google-signin-script')) {
+      // Script already exists, check if google is available
+      if (window.google) {
+        setIsScriptLoaded(true);
+      }
       return;
     }
     const script = document.createElement('script');
@@ -54,10 +58,11 @@ const Login = () => {
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      console.log('Google Sign-In script loaded');
-      if (googleClientId) {
-        initializeGoogleSignIn();
-      }
+      console.log('Google script loaded');
+      setIsScriptLoaded(true);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Sign-In script');
     };
     document.body.appendChild(script);
   };
@@ -80,6 +85,7 @@ const Login = () => {
       if (!result.ok) {
         const data = await result.json().catch(() => null);
         setError(data?.error || 'Google sign-in failed.');
+        setIsGoogleLoading(false);
         return;
       }
 
@@ -98,24 +104,17 @@ const Login = () => {
       }
       window.dispatchEvent(new Event('auth-changed'));
       navigate('/dashboard');
+      setIsGoogleLoading(false);
     } catch (err) {
       setError('Network error. Please try again.');
-    } finally {
       setIsGoogleLoading(false);
     }
   };
 
   const initializeGoogleSignIn = () => {
     if (!googleClientId || !window.google || isGoogleInitialized) {
-      console.log('Google Sign-In not ready:', { 
-        googleClientId: !!googleClientId, 
-        googleLib: !!window.google,
-        alreadyInitialized: isGoogleInitialized
-      });
       return;
     }
-
-    console.log('Initializing Google Sign-In with client ID:', googleClientId.substring(0, 20) + '...');
     
     try {
       window.google.accounts.id.initialize({
@@ -124,21 +123,28 @@ const Login = () => {
       });
       
       setIsGoogleInitialized(true);
-      console.log('Google Sign-In initialized successfully');
     } catch (err) {
       console.error('Error initializing Google Sign-In:', err);
     }
   };
 
   useEffect(() => {
-    if (googleClientId && window.google && !isGoogleInitialized) {
+    if (googleClientId && isScriptLoaded && window.google && !isGoogleInitialized) {
+      console.log('Initializing Google Sign-In...');
       // Small delay to ensure DOM is ready
       const timer = setTimeout(() => {
         initializeGoogleSignIn();
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [googleClientId, isGoogleInitialized]);
+  }, [googleClientId, isScriptLoaded, isGoogleInitialized]);
+
+  // Cleanup: Reset loading state on unmount
+  useEffect(() => {
+    return () => {
+      setIsGoogleLoading(false);
+    };
+  }, []);
 
   const handleGoogleSignIn = () => {
     if (!isGoogleInitialized || isGoogleLoading) {
@@ -149,6 +155,12 @@ const Login = () => {
     setIsGoogleLoading(true);
     setError('');
 
+    // Safety timeout: Reset loading state after 30 seconds
+    const timeoutId = setTimeout(() => {
+      setIsGoogleLoading(false);
+      setError('Google Sign-In timed out. Please try again.');
+    }, 30000);
+
     // Use OAuth2 Token Client instead of prompt() to avoid FedCM issues
     try {
       const client = window.google.accounts.oauth2.initCodeClient({
@@ -156,9 +168,10 @@ const Login = () => {
         scope: 'email profile openid',
         ux_mode: 'popup',
         callback: async (response) => {
-          if (response.code) {
-            // Send authorization code to backend
-            try {
+          clearTimeout(timeoutId); // Clear the timeout on callback
+          try {
+            if (response.code) {
+              // Send authorization code to backend
               const result = await fetch('/api/google-auth/', {
                 method: 'POST',
                 headers: {
@@ -172,7 +185,6 @@ const Login = () => {
               if (!result.ok) {
                 const data = await result.json().catch(() => null);
                 setError(data?.error || 'Google sign-in failed.');
-                setIsGoogleLoading(false);
                 return;
               }
 
@@ -187,12 +199,16 @@ const Login = () => {
               }
               window.dispatchEvent(new Event('auth-changed'));
               navigate('/dashboard');
-            } catch (err) {
-              setError('Network error. Please try again.');
-              setIsGoogleLoading(false);
+            } else if (response.error) {
+              // User closed popup or cancelled
+              setError('Google sign-in was cancelled.');
+            } else {
+              setError('Google sign-in was cancelled.');
             }
-          } else {
-            setError('Google sign-in was cancelled.');
+          } catch (err) {
+            console.error('Error in Google Sign-In callback:', err);
+            setError('Network error. Please try again.');
+          } finally {
             setIsGoogleLoading(false);
           }
         },
@@ -200,6 +216,7 @@ const Login = () => {
       
       client.requestCode();
     } catch (err) {
+      clearTimeout(timeoutId);
       console.error('Error with Google Sign-In:', err);
       setError('Failed to start Google Sign-In. Please try again.');
       setIsGoogleLoading(false);
@@ -356,7 +373,7 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full px-4 py-3.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-200 disabled:from-gray-600 disabled:to-gray-600 disabled:text-gray-400 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 disabled:shadow-none"
+              className="w-full px-4 py-3.5 text-sm font-semibold bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl hover:from-blue-700 hover:to-blue-600 transition-all duration-200 disabled:from-gray-600 disabled:to-gray-600 disabled:text-gray-400 shadow-sm shadow-blue-500/10 hover:shadow-md hover:shadow-blue-500/20 disabled:shadow-none"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

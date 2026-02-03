@@ -60,7 +60,6 @@ const Profile = () => {
                     crossOrigin="anonymous"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
-                      console.log('Image failed to load:', userPicture);
                       e.target.style.display = 'none';
                       e.target.nextSibling.style.display = 'flex';
                     }}
@@ -71,7 +70,6 @@ const Profile = () => {
                     {userName.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-emerald-500 rounded-full border-4 border-gray-900"></div>
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">{userName}</h2>
