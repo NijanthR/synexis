@@ -1,3 +1,4 @@
 Django>=5.2.7
 django-cors-headers
 python-dotenv
+openpyxl

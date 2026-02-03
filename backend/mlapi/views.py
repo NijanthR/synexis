@@ -389,8 +389,6 @@ def google_auth(request):
 					if not token:
 						return JsonResponse({"error": "Failed to get ID token from authorization code"}, status=400)
 			except urllib.error.HTTPError as e:
-				error_body = e.read().decode('utf-8')
-				print(f"Token exchange error: {error_body}")
 				return JsonResponse({"error": "Failed to exchange authorization code"}, status=401)
 
 		# Verify token with Google
@@ -704,9 +702,226 @@ def predict_animal(request):
 				"probabilities": probabilities,
 			}
 		)
-	
 
 
+@csrf_exempt
+def upload_dataset(request):
+	"""Upload and store Excel dataset file"""
+	if request.method != 'POST':
+		return JsonResponse({'error': 'Only POST method allowed'}, status=405)
 	
+	try:
+		file = request.FILES.get('file')
+		if not file:
+			return JsonResponse({'error': 'No file provided'}, status=400)
+		
+		# Validate file extension
+		file_name = file.name.lower()
+		if not (file_name.endswith('.xlsx') or file_name.endswith('.xls')):
+			return JsonResponse({'error': 'Only Excel files (.xlsx or .xls) are allowed'}, status=400)
+		
+		# Parse Excel file
+		try:
+			import openpyxl
+			from io import BytesIO
+			
+			# Read the file
+			file_bytes = file.read()
+			workbook = openpyxl.load_workbook(BytesIO(file_bytes))
+			sheet = workbook.active
+			
+			# Get data
+			data = list(sheet.values)
+			if not data:
+				return JsonResponse({'error': 'Excel file is empty'}, status=400)
+			
+			# Extract headers and records
+			headers = [str(cell) if cell else '' for cell in data[0]]
+			records = []
+			for row in data[1:]:  # Get all data rows
+				record = {}
+				for idx, cell in enumerate(row):
+					if idx < len(headers):
+						record[headers[idx]] = cell if cell else ''
+				records.append(record)
+			
+			rows = len(data) - 1  # Exclude header
+			columns = len(headers)
+			
+		except Exception as e:
+			return JsonResponse({'error': f'Failed to parse Excel file: {str(e)}'}, status=400)
+		
+		# Reset file pointer and save
+		file.seek(0)
+		
+		# Get user email from request (if available)
+		user_email = request.POST.get('user_email', 'anonymous')
+		
+		# Create dataset record
+		from .models import Dataset
+		dataset = Dataset.objects.create(
+			name=file.name,
+			file=file,
+			rows=rows,
+			columns=columns,
+			size=f"{file.size / (1024 * 1024):.2f} MB",
+			fields=headers,
+			records=records,
+			user_email=user_email
+		)
+		
+		return JsonResponse({
+			'id': dataset.id,
+			'name': dataset.name,
+			'rows': dataset.rows,
+			'columns': dataset.columns,
+			'size': dataset.size,
+			'fields': dataset.fields,
+			'records': dataset.records,
+			'uploaded_at': dataset.uploaded_at.isoformat(),
+			'user_email': dataset.user_email
+		}, status=201)
+		
+	except Exception as e:
+		return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def list_datasets(request):
+	"""List datasets for the current user"""
+	if request.method != 'GET':
+		return JsonResponse({'error': 'Only GET method allowed'}, status=405)
 	
+	try:
+		from .models import Dataset
+		# Filter by user email from query params
+		user_email = request.GET.get('user_email', 'anonymous')
+		datasets = Dataset.objects.filter(user_email=user_email)
+		
+		data = [{
+			'id': ds.id,
+			'name': ds.name,
+			'rows': ds.rows,
+			'columns': ds.columns,
+			'size': ds.size,
+			'fields': ds.fields,
+			'records': ds.records,
+			'uploaded_at': ds.uploaded_at.isoformat(),
+			'user_email': ds.user_email
+		} for ds in datasets]
+		
+		return JsonResponse({'datasets': data})
+		
+	except Exception as e:
+		return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def delete_dataset(request, dataset_id):
+	"""Delete a dataset by ID (only if owned by user)"""
+	if request.method != 'DELETE':
+		return JsonResponse({'error': 'Only DELETE method allowed'}, status=405)
 	
+	try:
+		from .models import Dataset
+		# Parse user_email from request body or query params
+		user_email = request.GET.get('user_email', 'anonymous')
+		dataset = Dataset.objects.get(id=dataset_id, user_email=user_email)
+		
+		# Delete the file from storage
+		if dataset.file:
+			dataset.file.delete()
+		
+		dataset.delete()
+		
+		return JsonResponse({'message': 'Dataset deleted successfully'})
+		
+	except Dataset.DoesNotExist:
+		return JsonResponse({'error': 'Dataset not found'}, status=404)
+	except Exception as e:
+		return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def add_comment(request):
+	"""Add a comment to a model"""
+	if request.method != 'POST':
+		return JsonResponse({'error': 'Only POST method allowed'}, status=405)
+	
+	try:
+		data = json.loads(request.body)
+		model_id = data.get('model_id')
+		user_name = data.get('user_name', 'Anonymous')
+		user_email = data.get('user_email', 'anonymous')
+		user_picture = data.get('user_picture', '')
+		comment_text = data.get('comment', '')
+		
+		if not model_id or not comment_text.strip():
+			return JsonResponse({'error': 'model_id and comment are required'}, status=400)
+		
+		from .models import ModelComment
+		comment = ModelComment.objects.create(
+			model_id=model_id,
+			user_name=user_name,
+			user_email=user_email,
+			user_picture=user_picture,
+			comment=comment_text
+		)
+		
+		return JsonResponse({
+			'id': comment.id,
+			'model_id': comment.model_id,
+			'user_name': comment.user_name,
+			'user_email': comment.user_email,
+			'user_picture': comment.user_picture,
+			'comment': comment.comment,
+			'created_at': comment.created_at.isoformat()
+		}, status=201)
+		
+	except Exception as e:
+		return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def get_comments(request, model_id):
+	"""Get all comments for a specific model"""
+	if request.method != 'GET':
+		return JsonResponse({'error': 'Only GET method allowed'}, status=405)
+	
+	try:
+		from .models import ModelComment
+		comments = ModelComment.objects.filter(model_id=model_id)
+		
+		data = [{
+			'id': c.id,
+			'user_name': c.user_name,
+			'user_email': c.user_email,
+			'user_picture': c.user_picture,
+			'comment': c.comment,
+			'created_at': c.created_at.isoformat()
+		} for c in comments]
+		
+		return JsonResponse({'comments': data})
+		
+	except Exception as e:
+		return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+def delete_comment(request, comment_id):
+	"""Delete a comment (only by the user who created it)"""
+	if request.method != 'DELETE':
+		return JsonResponse({'error': 'Only DELETE method allowed'}, status=405)
+	
+	try:
+		from .models import ModelComment
+		user_email = request.GET.get('user_email', 'anonymous')
+		comment = ModelComment.objects.get(id=comment_id, user_email=user_email)
+		comment.delete()
+		
+		return JsonResponse({'message': 'Comment deleted successfully'})
+		
+	except ModelComment.DoesNotExist:
+		return JsonResponse({'error': 'Comment not found'}, status=404)
+	except Exception as e:
+		return JsonResponse({'error': str(e)}, status=500)

@@ -13,6 +13,8 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [googleClientId, setGoogleClientId] = useState('');
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isGoogleInitialized, setIsGoogleInitialized] = useState(false);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
   useEffect(() => {
     // Fetch Google Client ID
@@ -36,6 +38,10 @@ const Signup = () => {
 
   const loadGoogleScript = () => {
     if (document.getElementById('google-signin-script')) {
+      // Script already exists, check if google is available
+      if (window.google) {
+        setIsScriptLoaded(true);
+      }
       return;
     }
     const script = document.createElement('script');
@@ -43,6 +49,13 @@ const Signup = () => {
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.defer = true;
+    script.onload = () => {
+      console.log('Google script loaded');
+      setIsScriptLoaded(true);
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Sign-In script');
+    };
     document.body.appendChild(script);
   };
 
@@ -64,6 +77,7 @@ const Signup = () => {
       if (!result.ok) {
         const data = await result.json().catch(() => null);
         setError(data?.error || 'Google sign-in failed.');
+        setIsGoogleLoading(false);
         return;
       }
 
@@ -78,39 +92,78 @@ const Signup = () => {
       }
       window.dispatchEvent(new Event('auth-changed'));
       navigate('/dashboard');
+      setIsGoogleLoading(false);
     } catch (err) {
       setError('Network error. Please try again.');
-    } finally {
       setIsGoogleLoading(false);
     }
   };
 
   const initializeGoogleSignIn = () => {
-    if (!googleClientId || !window.google) {
+    if (!googleClientId || !window.google || isGoogleInitialized) {
       return;
     }
-
-    window.google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: handleGoogleCallback,
-      ux_mode: 'popup',
-    });
+    
+    try {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: handleGoogleCallback,
+        ux_mode: 'popup',
+      });
+      
+      setIsGoogleInitialized(true);
+    } catch (err) {
+      console.error('Error initializing Google Sign-In:', err);
+    }
   };
 
   useEffect(() => {
-    if (googleClientId && window.google) {
-      initializeGoogleSignIn();
+    if (googleClientId && isScriptLoaded && window.google && !isGoogleInitialized) {
+      console.log('Initializing Google Sign-In...');
+      // Small delay to ensure DOM is ready
+      const timer = setTimeout(() => {
+        initializeGoogleSignIn();
+      }, 200);
+      return () => clearTimeout(timer);
     }
-  }, [googleClientId]);
+  }, [googleClientId, isScriptLoaded, isGoogleInitialized]);
+
+  // Cleanup: Reset loading state on unmount
+  useEffect(() => {
+    return () => {
+      setIsGoogleLoading(false);
+    };
+  }, []);
 
   const handleGoogleSignIn = () => {
-    if (!googleClientId || !window.google) {
-      setError('Google Sign-In is not ready. Please refresh the page.');
+    if (!isGoogleInitialized || isGoogleLoading) {
+      setError('Google Sign-In is not ready yet. Please wait...');
       return;
     }
 
+    setIsGoogleLoading(true);
     setError('');
-    window.google.accounts.id.prompt();
+    
+    // Safety timeout: Reset loading state after 30 seconds
+    const timeoutId = setTimeout(() => {
+      setIsGoogleLoading(false);
+      setError('Google Sign-In timed out. Please try again.');
+    }, 30000);
+    
+    try {
+      window.google.accounts.id.prompt((notification) => {
+        clearTimeout(timeoutId); // Clear the timeout
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // Fallback: User closed the prompt or it wasn't displayed
+          setIsGoogleLoading(false);
+        }
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('Error showing Google Sign-In prompt:', err);
+      setError('Failed to show Google Sign-In. Please try again.');
+      setIsGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -326,7 +379,7 @@ const Signup = () => {
           <button
             type="button"
             onClick={handleGoogleSignIn}
-            disabled={!googleClientId || isGoogleLoading}
+            disabled={!isGoogleInitialized || isGoogleLoading}
             className="w-full px-4 py-3.5 bg-white hover:bg-gray-50 text-gray-800 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-md hover:shadow-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isGoogleLoading ? (
@@ -336,6 +389,14 @@ const Signup = () => {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 Signing in with Google...
+              </>
+            ) : !isGoogleInitialized ? (
+              <>
+                <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Loading...
               </>
             ) : (
               <>
